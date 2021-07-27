@@ -10,4 +10,4 @@ module load nixpkgs/16.09 gcc/7.3.0 nixpkgs/16.09 intel/2018.3 samtools/1.10 var
 module load samtools/1.10
 ls *preprocessed_sorted.bam > lst_samples_bamfiles.txt
 #depth report
-samtools depth *preprocessed_sorted.bam -o common_depth_report.csv
+samtools depth *preprocessed_sorted.bam -o out/common_depth_report.csv
