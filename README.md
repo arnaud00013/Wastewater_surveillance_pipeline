@@ -15,13 +15,13 @@ R (version 3.5.2+) packages: "ggplot2", "seqinr", "grid", "RColorBrewer", "cowpl
 The pipeline is separated in two main modules that sould be run in the following order:
 1. Variant calling module
 
-For unning this module of the pipeline, you need to submit a job to your cluster slurm queue using the following command 'sbatch' command and the *.sh files.
+For unning this module of the pipeline, you need to submit a job to your cluster slurm queue using the following command: 'sbatch submit_samples_to_iPMVC.sh'.
  
 a) Inputs (files you need to copy into the Variant_calling workspace): 
 
--2 Paired-end .fastq files for each sample (extension should be _R1.fastq and _R2.fastq). However, you can use single-end fastq but you have to modify the run_iPMVC_in_parallel.py script at lines 15-25 appropriately. The fastq files should be in the Variant_calling workspace and you need to specify the absolute path of the Variant_calling workspace in the 2 *.sh files where 'WORKSPACE' is indicated.
+-->2 Paired-end .fastq files for each sample (extension should be _R1.fastq and _R2.fastq). However, you can use single-end fastq but you have to modify the run_iPMVC_in_parallel.py script at lines 15-25 appropriately. The fastq files should be in the Variant_calling workspace and you need to specify the absolute path of the Variant_calling workspace in the 2 *.sh files where 'WORKSPACE' is indicated.
 
--A text file with the list of samples named "lst_samples.txt".
+-->A text file with the list of samples named "lst_samples.txt".
 
 b) Output: VarScan .tab files, which are tab-delimited files.
 
