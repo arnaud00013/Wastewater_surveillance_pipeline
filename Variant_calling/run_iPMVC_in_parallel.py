@@ -50,8 +50,8 @@ def run_core_iPMVC(wp_path,current_sample, nb_t_profiling):
 	#print(("samtools mpileup -B -f {0}MN908947_3.fasta -d 0 {0}{1}_preprocessed_sorted_noduplicates.bam > {0}{1}.pileup".format(wp_path, current_sample)))
 	#os.system("samtools mpileup -B -f {0}MN908947_3.fasta {0}{1}_preprocessed_sorted_noduplicates.bam > {0}{1}.pileup".format(wp_path, current_sample))
 	os.system("samtools mpileup -B -f {0}MN908947_3.fasta {0}{1}_preprocessed_sorted.bam > {0}{1}.pileup".format(wp_path, current_sample))
-	#print(("java -jar $EBROOTVARSCAN/VarScan.v2.4.1.jar pileup2snp {0}{1}.pileup --min-coverage 400 --min-reads2 5 --min-var-freq 0.03 > {0}variants_{1}.tab".format(wp_path, current_sample)))
-	os.system("java -jar $EBROOTVARSCAN/VarScan.v2.4.1.jar pileup2snp {0}{1}.pileup --min-coverage 100 --min-reads2 5 --min-var-freq 0.05 > {0}variants_{1}.tab".format(wp_path, current_sample))
+	#print(("java -jar $EBROOTVARSCAN/VarScan.v2.4.1.jar pileup2snp {0}{1}.pileup --min-coverage 400 --min-reads2 5 --min-var-freq 0.03 > {0}out/variants_{1}.tab".format(wp_path, current_sample)))
+	os.system("java -jar $EBROOTVARSCAN/VarScan.v2.4.1.jar pileup2snp {0}{1}.pileup --min-coverage 100 --min-reads2 5 --min-var-freq 0.05 > {0}out/variants_{1}.tab".format(wp_path, current_sample))
 	#Add sample name in Already_analyzed_samples.txt
 	print("echo {1} >> {0}Already_analyzed_samples.txt".format(wp_path, current_sample))
 	os.system("echo {1} >> {0}Already_analyzed_samples.txt".format(wp_path, current_sample))
