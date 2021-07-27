@@ -5,7 +5,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --mem=20480M
 #SBATCH --cpus-per-task=10
-chmod u+x /home/p1211536/scratch/Wastewater/Illumina/*.py /home/p1211536/scratch/Wastewater/Illumina/*.r /home/p1211536/scratch/Wastewater/Illumina/*.sh
+chmod u+x WORKSPACE/*.py WORKSPACE/*.r WORKSPACE/*.sh
 module load nixpkgs/16.09 gcc/7.3.0 nixpkgs/16.09 intel/2018.3 samtools/1.10 varscan/2.4.1
 module load samtools/1.10
 ls *preprocessed_sorted.bam > lst_samples_bamfiles.txt
