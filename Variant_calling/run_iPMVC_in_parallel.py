@@ -21,23 +21,8 @@ def run_core_iPMVC(wp_path,current_sample, nb_t_profiling):
 	os.system("rm {0}{1}_R1.fastq".format(wp_path, current_sample))
 	os.system("rm {0}{1}_R2.fastq".format(wp_path, current_sample))
 	
-	#if sample contains whole metagenomes shotgun sequences
-	#print(("blastn -task megablast -db {0}Betacoronaviruses.fasta -query {1}_trimmed_lcfiltered_1.fasta -out {1}_trimmed_lcfiltered_1.xml -evalue 1e-10 -max_target_seqs 10 -max_hsps 1 -qcov_hsp_perc 60 -perc_identity 60 -outfmt 5 -num_threads {2}".format(wp_path, current_sample, nb_t_profiling)))
-	#os.system("blastn -task megablast -db {0}Betacoronaviruses.fasta -query {1}_trimmed_lcfiltered_1.fasta -out {1}_trimmed_lcfiltered_1.xml -evalue 1e-10 -max_target_seqs 10 -max_hsps 1 -qcov_hsp_perc 60 -perc_identity 60 -outfmt 5 -num_threads {2}".format(wp_path, current_sample, nb_t_profiling))
-	#print(("blastn -task megablast -db {0}Betacoronaviruses.fasta -query {1}_trimmed_lcfiltered_2.fasta -out {1}_trimmed_lcfiltered_2.xml -evalue 1e-10 -max_target_seqs 10 -max_hsps 1 -qcov_hsp_perc 60 -perc_identity 60 -outfmt 5 -num_threads {2}".format(wp_path, current_sample, nb_t_profiling)))
-	#os.system("blastn -task megablast -db {0}Betacoronaviruses.fasta -query {1}_trimmed_lcfiltered_2.fasta -out {1}_trimmed_lcfiltered_2.xml -evalue 1e-10 -max_target_seqs 10 -max_hsps 1 -qcov_hsp_perc 60 -perc_identity 60 -outfmt 5 -num_threads {2}".format(wp_path, current_sample, nb_t_profiling))
-	#print(("./extract_Betacoronavirus_reads_from_sample.py {0} {1}".format(wp_path, current_sample)))
-	##os.system("./extract_Betacoronavirus_reads_from_sample.py {0} {1}".format(wp_path, current_sample))
-
-	#index reference genome if it has not been done yet
-	#print("bwa index {0}MN908947_3.fasta".format(wp_path))
-	#os.system("bwa index {0}MN908947_3.fasta".format(wp_path))
-	
-	#Align reads to reference genome
-	#print(("bwa mem {0}MN908947_3.fasta {0}{1}_trimmed_lcfiltered_onlyBetacoronavirus_1.fasta {0}{1}_trimmed_lcfiltered_onlyBetacoronavirus_2.fasta -t {2} > {0}{1}_preprocessed.sam".format(wp_path, current_sample, nb_t_profiling)))
+	#Align reads to reference genome (remove {0}{1}_trimmed_lcfiltered_2.fasta if single end)
 	os.system("bwa mem {0}MN908947_3.fasta {0}{1}_trimmed_lcfiltered_1.fasta {0}{1}_trimmed_lcfiltered_2.fasta -t {2} > {0}{1}_preprocessed.sam".format(wp_path, current_sample, nb_t_profiling))
-		#if you need to target Betacoronaviruses reads, map the filtered reads with the following command
-	##os.system("bwa mem {0}MN908947_3.fasta {0}{1}_trimmed_lcfiltered_onlyBetacoronavirus_1.fasta {0}{1}_trimmed_lcfiltered_onlyBetacoronavirus_2.fasta -t {2} > {0}{1}_preprocessed.sam".format(wp_path, current_sample, nb_t_profiling))
 	
 	#Compress, sort and filter alignment
 	#print("samtools view -bS {0}{1}_preprocessed.sam > {0}{1}_preprocessed.bam".format(wp_path, current_sample))
