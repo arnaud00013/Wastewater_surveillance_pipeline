@@ -15,7 +15,7 @@ def run_core_iPMVC(wp_path,current_sample, nb_t_profiling):
 	#unzip fastq.gz
 	os.system("gunzip -k {0}{1}_R1.fastq.gz".format(wp_path, current_sample))
 	os.system("gunzip -k {0}{1}_R2.fastq.gz".format(wp_path, current_sample))
-	# quality control, trimming, automatic adapters removal and low complexity reads removal (remove -I options if single end)
+	# quality control, trimming, automatic adapters removal and low complexity reads removal (remove -I and -O options if single end)
 	os.system("fastp -i {0}_R1.fastq -I {0}_R2.fastq -o {0}_trimmed_1.fastq -O {0}_trimmed_2.fastq -l 70 -x --cut_tail --cut_tail_mean_quality 20 --detect_adapter_for_pe --thread {1}".format(current_sample, nb_t_profiling))
 	os.system("prinseq-lite.pl -fastq {0}_trimmed_1.fastq -fastq2 {0}_trimmed_2.fastq -lc_method entropy -lc_threshold 60 -out_good {0}_trimmed_lcfiltered -out_bad {0}_trimmed_bad -out_format 1".format(current_sample))
 	os.system("rm {0}{1}_R1.fastq".format(wp_path, current_sample))
