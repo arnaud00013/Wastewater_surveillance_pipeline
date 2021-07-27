@@ -30,4 +30,4 @@ b) Output: VarScan .tab files, which are tab-delimited files.
 This module run various analysis of SARS-CoV-2 within host diversity (Sample coverage, lineage detection, estimation of the lineages within-sample frequency, etc).
 
 a) Inputs (files you need to copy into the Post_variant_calling_analysis workspace):
-
+TO DO
