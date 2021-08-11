@@ -71,9 +71,6 @@ threshold_nb_individuals_sharing_mut <- ceiling(nb_samples/10)
 #import reference fasta 
 genome_refseq <- seqinr::getSequence(object = toupper(read.fasta(paste0(output_workspace,fasta_refseq_filename),seqtype = "DNA",as.string = TRUE,forceDNAtolower = FALSE)),as.string = TRUE)[[1]]
 
-#amplicon positions
-df_amplicon_positions <- read.csv2(file = paste0(output_workspace,"amplicon_positions.csv"),sep = ",",header = TRUE,stringsAsFactors = FALSE)
-
 #import and concatenate samples variants calling file
 df_variants <- read.csv2(file = paste0(output_workspace,"variants_",lst_samples[1],".tab"),sep = "\t",header = TRUE,stringsAsFactors = FALSE)
 if (nrow(df_variants)!=0){
@@ -98,7 +95,7 @@ df_variants <- subset(df_variants,nchar(VarAllele)==1)
 df_variants <- subset(df_variants,subset = !duplicated(paste0(Position,VarAllele,Sample,sep="")))
 #make sure that the variant frequency filter is applied (freq variant >=0.05 on at least one strand)
 df_variants$VarFreq <- (as.numeric(gsub(pattern = "%",replacement = "",x = df_variants$VarFreq,fixed = TRUE))/100)
-df_variants <- subset(df_variants, (Reads1+Reads2>=100)&(VarFreq>=0.05))
+df_variants <- subset(df_variants, (Reads1+Reads2>=50)&(VarFreq>=0.25))
 #apply strand bias filter on variants (freq variant >=0.02 on each strand)
 df_variants <- df_variants[(((df_variants$Reads2Plus/(df_variants$Reads1Plus+df_variants$Reads2Plus))>=0.02)&((df_variants$Reads2Minus/(df_variants$Reads1Minus+df_variants$Reads2Minus))>=0.02)),]
 
@@ -491,49 +488,53 @@ for (i in 2:nb_samples_original){
 df_depth$ORF <- unname(vapply(X = df_depth$position,FUN = find_ORF_of_mutation,FUN.VALUE = c("")))
 df_depth <- unique(df_depth)
 
-#mean coverage and breadth of coverage per Sample for each amplicon
-v_lst_unique_amplicons <- unique(df_amplicon_positions$amplicon_name)
-df_plot_mean_cov_per_sample_by_amplicon <- data.frame(Sample=rep(sort(unique(df_depth$sample)),length(v_lst_unique_amplicons)),amplicon=rep(v_lst_unique_amplicons,nb_samples_original),avg_cov=NA,breadth_of_cov=NA,stringsAsFactors = F)
+# #amplicon positions
+# df_amplicon_positions <- read.csv2(file = paste0(output_workspace,"amplicon_positions.csv"),sep = ",",header = TRUE,stringsAsFactors = FALSE)
+# 
+# #mean coverage and breadth of coverage per Sample for each amplicon
+# v_lst_unique_amplicons <- unique(df_amplicon_positions$amplicon_name)
+# df_plot_mean_cov_per_sample_by_amplicon <- data.frame(Sample=rep(sort(unique(df_depth$sample)),length(v_lst_unique_amplicons)),amplicon=rep(v_lst_unique_amplicons,nb_samples_original),avg_cov=NA,breadth_of_cov=NA,stringsAsFactors = F)
+# 
+# nb_cores <- 5 
+# lst_splits <- split(1:nrow(df_plot_mean_cov_per_sample_by_amplicon), ceiling(seq_along(1:nrow(df_plot_mean_cov_per_sample_by_amplicon))/(nrow(df_plot_mean_cov_per_sample_by_amplicon)/nb_cores)))
+# the_f_parallel <- function(i_cl){
+#   the_vec<- lst_splits[[i_cl]]
+#   df_plot_mean_cov_per_sample_by_amplicon_current_subset <- df_plot_mean_cov_per_sample_by_amplicon[the_vec,]
+#   count_iter <- 0
+#   for (the_i in 1:nrow(df_plot_mean_cov_per_sample_by_amplicon_current_subset)){
+#     start_current_amplicon <- subset(df_amplicon_positions,amplicon_name==df_plot_mean_cov_per_sample_by_amplicon_current_subset$amplicon[the_i])$start
+#     stop_current_amplicon <- subset(df_amplicon_positions,amplicon_name==df_plot_mean_cov_per_sample_by_amplicon_current_subset$amplicon[the_i])$stop
+#     length_current_amplicon <- stop_current_amplicon - start_current_amplicon + 1
+#     df_plot_mean_cov_per_sample_by_amplicon_current_subset$avg_cov[the_i] <- mean(subset(df_depth,(sample==df_plot_mean_cov_per_sample_by_amplicon_current_subset$Sample[the_i])&(position>=start_current_amplicon)&(position<=stop_current_amplicon))$depth,na.rm=T)
+#     df_plot_mean_cov_per_sample_by_amplicon_current_subset$breadth_of_cov[the_i] <- length(unique(subset(df_depth,(sample==df_plot_mean_cov_per_sample_by_amplicon_current_subset$Sample[the_i])&(position>=start_current_amplicon)&(position<=stop_current_amplicon)&(depth>=100)&(!is.na(depth)))$position))/length_current_amplicon
+#     count_iter <- count_iter + 1
+#     print(paste0("Core ",i_cl,": Step ",count_iter," done out of ",nrow(df_plot_mean_cov_per_sample_by_amplicon_current_subset),"!"))
+#   }
+#   return(df_plot_mean_cov_per_sample_by_amplicon_current_subset)
+# }
+# cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_df_plot_mean_cov_per_sample_by_amplicon.txt"))
+# registerDoParallel(cl)
+# df_plot_mean_cov_per_sample_by_amplicon <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings"))  %dopar% the_f_parallel(i_cl)
+# stopCluster(cl)
+# df_plot_mean_cov_per_sample_by_amplicon <- unique(df_plot_mean_cov_per_sample_by_amplicon)
+# saveRDS(df_plot_mean_cov_per_sample_by_amplicon,paste0(output_workspace,"df_plot_mean_cov_per_sample_by_amplicon.rds"))
+# ggplot(data = df_plot_mean_cov_per_sample_by_amplicon,mapping=aes(x=factor(amplicon,levels=v_lst_unique_amplicons),y=log10(avg_cov))) + geom_violin(fill="red3") + geom_boxplot(width=0.05) + geom_jitter() + xlab("amplicon") + ylab("log10(Mean coverage per sample)") + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=7,angle = 60,hjust=1))
+# ggsave(filename = "amplicon_mean_coverage_per_sample.png", path=output_workspace, width = 20, height = 15, units = "cm")
+# ggplot(data = df_plot_mean_cov_per_sample_by_amplicon,mapping=aes(x=factor(amplicon,levels=v_lst_unique_amplicons),y=((breadth_of_cov)))) + geom_violin(fill="red3") + geom_jitter() + xlab("amplicon") + ylab("Breadth of coverage per sample") + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=7,angle = 60,hjust=1))
+# ggsave(filename = "amplicon_breadth_of_coverage_per_sample.png", path=output_workspace, width = 20, height = 15, units = "cm")
+# #heatmap mean cov per amplicon in each sample
+# mtx_hmp_mean_cov_per_sample_for_each_amplicon <- reshape2::acast(data = df_plot_mean_cov_per_sample_by_amplicon, formula = Sample~amplicon, value.var="avg_cov")
+# #heatmap breadth of cov per amplicon in each sample
+# mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon <- reshape2::acast(df_plot_mean_cov_per_sample_by_amplicon, Sample~amplicon, value.var="breadth_of_cov")
+# 
+# #proportion of samples in which mean depth of coverage is inferior to 100x + proportion of samples in which breadth of coverage is inferior to 0.5
+# df_amplicons_proportion_samples_with_low_coverage <- df_amplicon_positions
+# df_amplicons_proportion_samples_with_low_coverage$ORF <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$start,FUN = find_ORF_of_mutation,FUN.VALUE = c("")))
+# df_amplicons_proportion_samples_with_low_coverage$proportion_of_samples_with_mean_depth_lower_than_100x <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$amplicon_name,FUN = function(x) sum(mtx_hmp_mean_cov_per_sample_for_each_amplicon[,x]<100,na.rm=T)/nb_samples_original,FUN.VALUE = c(0.0)))
+# df_amplicons_proportion_samples_with_low_coverage$proportion_of_samples_with_breadth_of_cov_lower_than_50pct <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$amplicon_name,FUN = function(x) sum(mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon[,x]<0.5,na.rm=T)/nb_samples_original,FUN.VALUE = c(0.0)))
+# df_amplicons_proportion_samples_with_low_coverage$ORF <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$start,FUN = find_ORF_of_mutation,FUN.VALUE = c("")))
+# write.table(x=df_amplicons_proportion_samples_with_low_coverage,file = paste0(output_workspace,"Table_amplicons_metadata_and_coverage_analysis_results.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
 
-nb_cores <- 5 
-lst_splits <- split(1:nrow(df_plot_mean_cov_per_sample_by_amplicon), ceiling(seq_along(1:nrow(df_plot_mean_cov_per_sample_by_amplicon))/(nrow(df_plot_mean_cov_per_sample_by_amplicon)/nb_cores)))
-the_f_parallel <- function(i_cl){
-  the_vec<- lst_splits[[i_cl]]
-  df_plot_mean_cov_per_sample_by_amplicon_current_subset <- df_plot_mean_cov_per_sample_by_amplicon[the_vec,]
-  count_iter <- 0
-  for (the_i in 1:nrow(df_plot_mean_cov_per_sample_by_amplicon_current_subset)){
-    start_current_amplicon <- subset(df_amplicon_positions,amplicon_name==df_plot_mean_cov_per_sample_by_amplicon_current_subset$amplicon[the_i])$start
-    stop_current_amplicon <- subset(df_amplicon_positions,amplicon_name==df_plot_mean_cov_per_sample_by_amplicon_current_subset$amplicon[the_i])$stop
-    length_current_amplicon <- stop_current_amplicon - start_current_amplicon + 1
-    df_plot_mean_cov_per_sample_by_amplicon_current_subset$avg_cov[the_i] <- mean(subset(df_depth,(sample==df_plot_mean_cov_per_sample_by_amplicon_current_subset$Sample[the_i])&(position>=start_current_amplicon)&(position<=stop_current_amplicon))$depth,na.rm=T)
-    df_plot_mean_cov_per_sample_by_amplicon_current_subset$breadth_of_cov[the_i] <- length(unique(subset(df_depth,(sample==df_plot_mean_cov_per_sample_by_amplicon_current_subset$Sample[the_i])&(position>=start_current_amplicon)&(position<=stop_current_amplicon)&(depth>=100)&(!is.na(depth)))$position))/length_current_amplicon
-    count_iter <- count_iter + 1
-    print(paste0("Core ",i_cl,": Step ",count_iter," done out of ",nrow(df_plot_mean_cov_per_sample_by_amplicon_current_subset),"!"))
-  }
-  return(df_plot_mean_cov_per_sample_by_amplicon_current_subset)
-}
-cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_df_plot_mean_cov_per_sample_by_amplicon.txt"))
-registerDoParallel(cl)
-df_plot_mean_cov_per_sample_by_amplicon <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings"))  %dopar% the_f_parallel(i_cl)
-stopCluster(cl)
-df_plot_mean_cov_per_sample_by_amplicon <- unique(df_plot_mean_cov_per_sample_by_amplicon)
-saveRDS(df_plot_mean_cov_per_sample_by_amplicon,paste0(output_workspace,"df_plot_mean_cov_per_sample_by_amplicon.rds"))
-ggplot(data = df_plot_mean_cov_per_sample_by_amplicon,mapping=aes(x=factor(amplicon,levels=v_lst_unique_amplicons),y=log10(avg_cov))) + geom_violin(fill="red3") + geom_boxplot(width=0.05) + geom_jitter() + xlab("amplicon") + ylab("log10(Mean coverage per sample)") + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=7,angle = 60,hjust=1))
-ggsave(filename = "amplicon_mean_coverage_per_sample.png", path=output_workspace, width = 20, height = 15, units = "cm")
-ggplot(data = df_plot_mean_cov_per_sample_by_amplicon,mapping=aes(x=factor(amplicon,levels=v_lst_unique_amplicons),y=((breadth_of_cov)))) + geom_violin(fill="red3") + geom_jitter() + xlab("amplicon") + ylab("Breadth of coverage per sample") + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=7,angle = 60,hjust=1))
-ggsave(filename = "amplicon_breadth_of_coverage_per_sample.png", path=output_workspace, width = 20, height = 15, units = "cm")
-#heatmap mean cov per amplicon in each sample
-mtx_hmp_mean_cov_per_sample_for_each_amplicon <- reshape2::acast(data = df_plot_mean_cov_per_sample_by_amplicon, formula = Sample~amplicon, value.var="avg_cov")
-#heatmap breadth of cov per amplicon in each sample
-mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon <- reshape2::acast(df_plot_mean_cov_per_sample_by_amplicon, Sample~amplicon, value.var="breadth_of_cov")
-
-#proportion of samples in which mean depth of coverage is inferior to 100x + proportion of samples in which breadth of coverage is inferior to 0.5
-df_amplicons_proportion_samples_with_low_coverage <- df_amplicon_positions
-df_amplicons_proportion_samples_with_low_coverage$ORF <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$start,FUN = find_ORF_of_mutation,FUN.VALUE = c("")))
-df_amplicons_proportion_samples_with_low_coverage$proportion_of_samples_with_mean_depth_lower_than_100x <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$amplicon_name,FUN = function(x) sum(mtx_hmp_mean_cov_per_sample_for_each_amplicon[,x]<100,na.rm=T)/nb_samples_original,FUN.VALUE = c(0.0)))
-df_amplicons_proportion_samples_with_low_coverage$proportion_of_samples_with_breadth_of_cov_lower_than_50pct <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$amplicon_name,FUN = function(x) sum(mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon[,x]<0.5,na.rm=T)/nb_samples_original,FUN.VALUE = c(0.0)))
-df_amplicons_proportion_samples_with_low_coverage$ORF <- unname(vapply(X = df_amplicons_proportion_samples_with_low_coverage$start,FUN = find_ORF_of_mutation,FUN.VALUE = c("")))
-write.table(x=df_amplicons_proportion_samples_with_low_coverage,file = paste0(output_workspace,"Table_amplicons_metadata_and_coverage_analysis_results.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
 #per genomic region
 ggplot(data = subset(df_amplicons_proportion_samples_with_low_coverage,!is.na(ORF)),mapping=aes(x=factor(ORF,levels=v_orfs),y=proportion_of_samples_with_mean_depth_lower_than_100x)) + geom_violin(fill="red3") + geom_boxplot(width=0.05) + geom_jitter() + xlab("Genomic region") + ylab("Proportion of samples in which amplicon mean depth < 100") + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=10,angle = 60,hjust=1))
 ggsave(filename = "Distribution_of_proportion_samples_in_which_amplicon_has_low_coverage_per_Genomic_region.png", path=output_workspace, width = 20, height = 15, units = "cm")
@@ -589,23 +590,23 @@ permanova_sample_vaf_profile_vs_site
 # svg(paste0(output_workspace,"Heatmap_mean_cov_per_sample_for_each_amplicon.svg"),width=20/2.54,height=16/2.54)
 # heatmap.2(x = log10(mtx_hmp_mean_cov_per_sample_for_each_amplicon+(1)), key.xlab = "log10(mean coverage+1)", labRow = "",cex=3, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(7.5, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
 # dev.off()
-png(paste0(output_workspace,"Heatmap_mean_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
-heatmap.2(x = log10(mtx_hmp_mean_cov_per_sample_for_each_amplicon+(1)), key.xlab = "log10(mean coverage+1)", labRow = "",cex=3, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(7.5, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
-dev.off()
-png(paste0(output_workspace,"Clustered_Heatmap_mean_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
-heatmap.2(x = log10(mtx_hmp_mean_cov_per_sample_for_each_amplicon+(1)), key.xlab = "log10(mean coverage+1)", labRow = "",cex=3, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(7.5, 5),cexCol = 0.1,cexRow = 1, xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = T,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
-dev.off()
+# png(paste0(output_workspace,"Heatmap_mean_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
+# heatmap.2(x = log10(mtx_hmp_mean_cov_per_sample_for_each_amplicon+(1)), key.xlab = "log10(mean coverage+1)", labRow = "",cex=3, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(7.5, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
+# dev.off()
+# png(paste0(output_workspace,"Clustered_Heatmap_mean_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
+# heatmap.2(x = log10(mtx_hmp_mean_cov_per_sample_for_each_amplicon+(1)), key.xlab = "log10(mean coverage+1)", labRow = "",cex=3, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(7.5, 5),cexCol = 0.1,cexRow = 1, xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = T,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
+# dev.off()
 
 #Heatmap_breadth_of_cov_per_sample_for_each_amplicon
 # svg(paste0(output_workspace,"Heatmap_breadth_of_cov_per_sample_for_each_amplicon.svg"),width=20/2.54,height=16/2.54)
 # heatmap.2(x = mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon, key.xlab = "Breadth of coverage",labRow = "",cex=2, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(6, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
 # dev.off()
-png(paste0(output_workspace,"Heatmap_breadth_of_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
-heatmap.2(x = mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon, key.xlab = "Breadth of coverage",labRow = "",cex=2, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(6, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
-dev.off()
-png(paste0(output_workspace,"Clustered_Heatmap_breadth_of_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
-heatmap.2(x = mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon, key.xlab = "Breadth of coverage",labRow = "",cex=2, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(6, 5),cexCol = 0.1,cexRow = 1, xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = T,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
-dev.off()
+# png(paste0(output_workspace,"Heatmap_breadth_of_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
+# heatmap.2(x = mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon, key.xlab = "Breadth of coverage",labRow = "",cex=2, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(6, 5),cexCol = 0.1,cexRow = 1, ColSideColors =palette_orfs[vapply(X = df_amplicon_positions$start,FUN =find_ORF_of_mutation ,FUN.VALUE = c(""))],xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = F,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
+# dev.off()
+# png(paste0(output_workspace,"Clustered_Heatmap_breadth_of_cov_per_sample_for_each_amplicon.png"),width=20/2.54,height=16/2.54,res = 1200,units = "in")
+# heatmap.2(x = mtx_hmp_breadth_of_cov_per_sample_for_each_amplicon, key.xlab = "Breadth of coverage",labRow = "",cex=2, lwid=c(1.5,4),density.info = "none",na.color = "black",dendrogram = "none",margins = c(6, 5),cexCol = 0.1,cexRow = 1, xlab = "Amplicon", ylab = "Sample",trace="none",scale="none", Rowv = T, Colv = T,col = colorRampPalette(brewer.pal(name = "Blues",n=9), space = "rgb")(36))
+# dev.off()
 
 # #QIAseq replicates 
 # lst_QIAseq_samples <-  read.csv2(file = paste0( "D:/Mirror/Covid19/Wastewater/QIAseq/Nanopore/","lst_samples.txt"),sep = ",",header = F,stringsAsFactors = FALSE)[,1]
@@ -2277,6 +2278,177 @@ ggsave(filename = "WW_samples_lineage_freq_model_result_per_location_preselect_b
 # df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings","glmnet","FD","vegan","ConsReg","MASS","leaps","caret"))  %dopar% the_f_parallel_preselect_based_on_forward_selection_and_X_is_binary(i_cl)
 # stopCluster(cl)
 
+#Lineages pre-selection based on forward selection + X is prevalence
+current_df_sample_PANGO_lineages_frequencies <- NULL
+#find best linear model for the sample with grid search
+iii <- 1
+for (z in 1:length(lst_unique_samples_for_PANGOlin_detection)){
+  current_sample <- lst_unique_samples_for_PANGOlin_detection[z]
+  print(paste0("Start of current sample freq analysis: ",current_sample))
+  is_the_model_mtx_singular <- F
+  
+  #Signature mutations VAF in sample
+  subset_df_current_sample <- subset(df_variants,(Sample==current_sample)&(label_mut_in_marker_fmt%in%colnames(mtx_is_signature_mutation_lineage)))
+  subset_df_current_sample <- unique(subset_df_current_sample[,c("Sample","label_mut_in_marker_fmt","VarFreq")])
+  #pre-selection with stepwise selection
+  if (length(unique(subset_df_current_sample$label_mut_in_marker_fmt))==1){
+    #Unsolvable case: 1 marker mutation and 1 lineage (no regression possible)
+    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
+    next()
+  }else{
+    X_init <- t(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages)[unique(subset_df_current_sample$label_mut_in_marker_fmt),]
+  }
+  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
+  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
+  Y <- unname(Y[rownames(X_init)])
+  current_sample_data <- as.data.frame(cbind(X_init,Y))
+  colnames(current_sample_data) <- c(colnames(X_init),"var_Y")
+  # Set seed for reproducibility
+  set.seed(123)
+  # Set up repeated k-fold cross-validation
+  train.control <- trainControl(method = "cv", number = 10)
+  nb_included_lins_before_preselect <- 10
+  is_optim_nb_lins_analysis_done <- F
+  while (!is_optim_nb_lins_analysis_done){
+    tryCatch(expr = {step.model <- train(var_Y ~0+., data = current_sample_data,
+                                         method = "leapForward",
+                                         tuneGrid = data.frame(nvmax = 1:nb_included_lins_before_preselect),
+                                         trControl = train.control);is_optim_nb_lins_analysis_done<-T},error=function(e) print(e))
+    nb_included_lins_before_preselect <- nb_included_lins_before_preselect - 1
+    if (nb_included_lins_before_preselect==0){
+      #print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
+      is_optim_nb_lins_analysis_done <- T
+      nb_included_lins_before_preselect <- 5
+      current_nv_max <- 5
+    }
+  }
+  if (nb_included_lins_before_preselect==0){
+    iii <- iii+1
+    next()
+  }else{
+    #find the optimal number of variables to select
+    current_nv_max <- unname(step.model$bestTune[1,])
+  }
+  #Do the selection
+  models <- regsubsets(var_Y ~., data = current_sample_data, nvmax = current_nv_max,method = "forward",weights = ifelse(test=rownames(current_sample_data)%in%names(v_lineage_marker_mutations),yes=3,no=1))
+  current_nv_max <- min(max(as.integer(substr(unique(rownames(summary(models)$outmat)),1,1))),current_nv_max)
+  #Save the slected lineages
+  current_lst_candidate_lineages <- colnames(summary(models)$outmat)[summary(models)$outmat[paste0(current_nv_max,"  ( 1 )"),]=="*"]
+  #prevalence data for mutations to fit in the model
+  if (length(current_lst_candidate_lineages)==0){
+    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
+    iii <- iii+1
+    next()
+  }else if (all(is.na(current_lst_candidate_lineages))){
+    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
+    iii <- iii+1
+    next()
+  }else if (length(current_lst_candidate_lineages)==1){
+    X <- matrix(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt],ncol=1)
+    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
+    X <- matrix(X,ncol=1)
+    vec_bool_rownames <- rowSums(X)>0
+    X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
+    X <- matrix(X,ncol=1)
+    rownames(X) <- subset_df_current_sample$label_mut_in_marker_fmt[vec_bool_rownames]
+  }else{
+    X <- t(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt])
+    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
+    X <- X[unname(rowSums(X)>0),] # remove mutations that cannot be explained by the presence of any candidate lineages
+    if (!is.matrix(X)){
+      print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
+      iii <- iii+1
+      next()
+    }
+  }
+  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
+  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
+  Y <- unname(Y[rownames(X)])
+  
+  #grid search definition for coefficients
+  eval(parse(text=paste0("df_grid_search_combinations <- ",paste0("expand.grid(",paste0(rep("c(0.1,0.5,0.9)", ncol(X)),collapse = ","),")"))))
+  #make sure grid search values respect initial constraints
+  df_grid_search_combinations <- subset(df_grid_search_combinations,(rowSums(df_grid_search_combinations) <= 1))
+  # MCMC grid search
+  current_sample_best_model <- NULL #initialization
+  current_sample_best_model_loglik <- -Inf #initialization
+  for (i in 1:nrow(df_grid_search_combinations)){
+    if (length(current_lst_candidate_lineages)==1){
+      is_the_model_mtx_singular <- T
+      eval(parse(text=paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(X) <= 1,(X) > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
+      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
+      if (is_the_model_mtx_singular){
+        break()
+      }
+      current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
+      if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
+        current_sample_best_model <- current_fit
+        current_sample_best_model_loglik <- current_sample_signif_model_likelihood
+      }
+    }else{
+      is_the_model_mtx_singular <- T
+      eval(parse(text= paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(",paste0("X",colnames(X),collapse = " + "),") <= 1,(",paste0("X",colnames(X),collapse = " + "),") > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
+      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
+      if (is_the_model_mtx_singular){
+        break()
+      }
+      if ((all(summary(current_fit)$coefficients[,"p.value"]<0.05))&(all(!is.na(summary(current_fit)$coefficients[,"p.value"])))){
+        current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
+        if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
+          current_sample_best_model <- current_fit
+          current_sample_best_model_loglik <- current_sample_signif_model_likelihood
+        }
+      }
+    }
+  }
+  
+  if (is_the_model_mtx_singular){
+    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
+    next()
+  }
+  if (length(current_sample_best_model)>0){
+    Y_predicted <- predict(current_sample_best_model, newdata = data.frame(X))
+    
+    #find SST and SSE
+    sst <- sum((Y - mean(Y))^2)
+    sse <- sum((Y_predicted - Y)^2)
+    
+    #find R-Squared
+    rsq <- 1 - sse/sst
+    adj_rsq <- 1-(((1-rsq)*(nrow(X)-1))/(nrow(X)-ncol(X)-1))
+    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=current_lst_candidate_lineages,frequency=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"Estimate"])),p.value=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"p.value"])),rsq_sample_model=rsq,adj_rsq_sample_model=adj_rsq,stringsAsFactors = F))
+  }
+  if (iii%%5==0){
+    print(paste0("Core ",i_cl,": ",iii," samples analyzed out of ",length(the_vec),"!"))
+  }
+  iii <- iii + 1
+}
+df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence <- current_df_sample_PANGO_lineages_frequencies
+
+#Result of Lineage Frequencies estimation analysis
+df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$date <- v_samples_date[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample]
+df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$location <- v_samples_location[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample]
+df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,!is.na(date))
+#Time series estimated frequencies of lineages of interest
+df_filtered_sample_PANGO_lineages_of_interest_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(lineage%in%v_lineages_of_interest)&(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
+df_filtered_sample_PANGO_lineages_of_interest_frequencies$label_lineage <- v_lineages_of_interest_with_who_desgnation[df_filtered_sample_PANGO_lineages_of_interest_frequencies$lineage]
+#Time series lineages frequencies
+ggplot(data = df_filtered_sample_PANGO_lineages_of_interest_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(label_lineage,levels=v_lineages_of_interest_with_who_desgnation[names(sort(table(subset(df_detected_marker_mutations_in_ww_samples,PANGO_lineage%in%v_lineages_of_interest)$PANGO_lineage),decreasing = F))])),position = "stack") +
+  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages") + scale_fill_manual(values=palette_PANGO_lineages_of_interest_with_who_designation)
+ggsave(filename = "Time_series_PANGO_lineage_of_interest_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 40, height = 20, units = "cm")
+#Time series estimated frequencies of lineages of interest
+df_filtered_sample_PANGO_lineages_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
+#Time series lineages frequencies
+ggplot(data = df_filtered_sample_PANGO_lineages_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(lineage,levels=names(sort(table(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$lineage),decreasing = F)))),position = "stack") +
+  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages")
+ggsave(filename = "Time_series_all_PANGO_lineages_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 40, height = 20, units = "cm")
+#Barplot Model results
+df_sample_frequencies_results <- aggregate(x = df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$p.value,by=list(Sample=df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample),FUN=function(x) ifelse(test=all((x<0.05)&(!is.na(x))),yes="Significant",no=ifelse(test=all((x>=0.05)&(!is.na(x))),yes="Non-significant",no=ifelse(test=all(is.na(x)),yes="Unsolvable",no="Mix"))))
+df_percent_model_results <- data.frame(model_result=c("Significant","Non-significant","Unsolvable"),frequency=c(nrow(subset(df_sample_frequencies_results,x=="Significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Non-significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Unsolvable"))/nrow(df_sample_frequencies_results)))
+ggplot(data = df_percent_model_results,mapping=aes(x=factor(model_result,levels=c("Significant","Non-significant","Unsolvable")),y=frequency)) + geom_col(mapping=aes(fill=factor(model_result,levels=c("Significant","Non-significant","Unsolvable"))),position = "stack") +
+  xlab("") + ylab("Frequency") + theme_bw() + theme(axis.title = element_text(size=12), axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_blank(),axis.title.x=element_blank(),axis.ticks.x = element_blank())+ scale_y_continuous(limits=c(0,1),breaks = seq(0,1,0.1)) + labs(fill="Sample lineage frequency\nmodel result") + scale_fill_manual(values=c("Significant"="blue","Non-significant"="black","Unsolvable"="red"))
+ggsave(filename = "WW_samples_lineage_freq_model_result_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 15, height = 15, units = "cm")
+
 
 #Compare frequency estimation methods
   #method1 : "Lineage pre-selection based on the number of\nsignature mutations AND X is a prevalence matrix"
@@ -2314,8 +2486,21 @@ for (i in 1:nrow(df_results_method3)){
   df_results_method3$WW_monthly_antilog_Shannon_entropy[i] <- 2^(ifelse(test = df_results_method3$WW_monthly_richness[i]>0,yes=df_results_method3$WW_monthly_Shannon_entropy[i],no=NA))
   df_results_method3$WW_monthly_Evenness[i] <- ifelse(test = df_results_method3$WW_monthly_richness[i]>0,yes=df_results_method3$WW_monthly_Shannon_entropy[i]/(log2(df_results_method3$WW_monthly_richness[i])),no=NA)
 }
+
+#method4 : "Lineage pre-selection based on forward\nselection AND X is a prevalence matrix"
+df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$month_year <- format(as.Date(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$date,"%Y-%m-%d"),"%Y-%m")
+df_results_method4 <- data.frame(month=v_lst_year_month,method="Lineage pre-selection based on forward\nselection AND X is a prevalence matrix",nb_WW_samples=NA,nb_WW_detections=NA,WW_monthly_richness=NA,WW_monthly_Shannon_entropy=NA,WW_monthly_antilog_Shannon_entropy=NA,WW_monthly_Evenness=NA,stringsAsFactors = F)
+for (i in 1:nrow(df_results_method4)){
+  df_results_method4$nb_WW_samples[i] <- length(unique(subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(!is.na(month_year))&(month_year==df_results_method4$month[i]))$Sample))
+  df_results_method4$nb_WW_detections[i] <- sum((!is.na(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$month_year))&(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$month_year==df_results_method4$month[i]),na.rm=T)
+  df_results_method4$WW_monthly_richness[i] <- length(unique((subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(!is.na(month_year))&(month_year==df_results_method4$month[i])&(!is.na(lineage))))$lineage))
+  df_results_method4$WW_monthly_Shannon_entropy[i] <- ifelse(test = df_results_method4$WW_monthly_richness[i]>0,yes=get_entropy(target = (subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(!is.na(month_year))&(month_year==df_results_method4$month[i])))$lineage),no=NA)
+  df_results_method4$WW_monthly_antilog_Shannon_entropy[i] <- 2^(ifelse(test = df_results_method4$WW_monthly_richness[i]>0,yes=df_results_method4$WW_monthly_Shannon_entropy[i],no=NA))
+  df_results_method4$WW_monthly_Evenness[i] <- ifelse(test = df_results_method4$WW_monthly_richness[i]>0,yes=df_results_method4$WW_monthly_Shannon_entropy[i]/(log2(df_results_method4$WW_monthly_richness[i])),no=NA)
+}
+
 #concatenate the dataframes
-df_results_methods <- rbind(df_results_method1,rbind(df_results_method2,df_results_method3))
+df_results_methods <- rbind(df_results_method1,rbind(df_results_method2,df_results_method3,df_results_method4))
 
 Nb_detections_over_Seqrate_across_methods_gg <- ggplot(data = df_results_methods,aes(x=as.factor(as.character(method)),y = nb_WW_detections/nb_WW_samples,fill=as.factor(as.character(method)))) + geom_violin() + geom_boxplot(width=0.075,fill="white") + geom_jitter() + xlab("method") + ylab("Number of lineage detections per month/\nNumber of sequenced samples per month") + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.position = "right",axis.text.x=element_blank()) +
   stat_compare_means(method = "wilcox",comparisons = list(c("Lineage pre-selection based on forward\nselection AND X is a binary matrix","Lineage pre-selection based on the number of\nsignature mutations AND X is a binary matrix"),c("Lineage pre-selection based on forward\nselection AND X is a binary matrix","Lineage pre-selection based on the number of\nsignature mutations AND X is a prevalence matrix"),c("Lineage pre-selection based on the number of\nsignature mutations AND X is a binary matrix","Lineage pre-selection based on the number of\nsignature mutations AND X is a prevalence matrix"))) + labs(fill="method")
@@ -2332,6 +2517,23 @@ Evenness_over_Seqrate_across_methods_gg <- ggplot(data = df_results_methods,aes(
 png(filename = paste0(output_workspace,"Comparisons_lineages_frequency_methods.png"),width = 40,height=30, units = "cm",res = 1200)
 grid.arrange(Nb_detections_over_Seqrate_across_methods_gg,Richness_over_Seqrate_across_methods_gg,Shannon_Entropy_over_Seqrate_across_methods_gg,Evenness_over_Seqrate_across_methods_gg,nrow=2,ncol=2)
 dev.off()
+
+#Table data stratification for Alexandra's paper
+df_sample_detection_metrics <- df_sample_stratifications_of_interest
+df_sample_detection_metrics$avg_cov <- NA
+df_sample_detection_metrics$nb_mutations <- NA
+df_sample_detection_metrics$nb_detected_lineages <- NA
+names(v_avg_depth_samples) <- lst_samples_original
+for (i in 1:nrow(df_sample_detection_metrics)){
+  df_sample_detection_metrics$avg_cov[i] <- v_avg_depth_samples[df_sample_detection_metrics$Sample[i]]
+  df_sample_detection_metrics$nb_mutations[i] <- v_nb_SNVs_per_sample[df_sample_detection_metrics$Sample[i]]
+  df_sample_detection_metrics$nb_detected_lineages[i] <- length(unique(subset(df_detected_marker_mutations_in_ww_samples,Sample==df_sample_detection_metrics$Sample[i])$PANGO_lineage))
+}
+#save tables
+write.table(x=df_sample_detection_metrics,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
+write.table(x=df_variants,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
+write.table(x=subset(df_detected_marker_mutations_in_ww_samples$nb_signature_mutations>=3),file = paste0(output_workspace,"Table_detected_marker_mutations_in_ww_samples.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
+
 
 library("session")
 save.session(file = paste0(output_workspace,"ALL_ILLUMINA_",gsub(pattern = ":",replacement = "_",x = gsub(pattern = " ",replacement = "_",x = date())),"_RSession.Rda"))
