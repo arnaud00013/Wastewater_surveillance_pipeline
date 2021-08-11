@@ -1,5 +1,5 @@
 #@Author=Arnaud NG
-#This script analyses wastewater samples and compares them with non-wastewater samples
+#This script analyses wastewater samples (Coverage, sensistivity of detection, concordance with clinical data (TO UPDATE), etc)
 
 #import libraries
 library("ggplot2")
@@ -156,85 +156,12 @@ for (i in (1:nrow(df_sample_stratifications_of_interest))){
 }
 get_location_from_sample_name_with_location <- function(the_sample_name){
   return(toupper(subset(df_sample_stratifications_of_interest,Sample==the_sample_name)$City[1]))
-  # if (grepl(pattern = "MTL",x = toupper(the_sample_name),fixed=T)){
-  #   return(toupper("Montreal"))
-  # }
-  # if (grepl(pattern = "OTT",x = toupper(the_sample_name),fixed=T)){
-  #   return(toupper("Ottawa"))
-  # }
-  # if (grepl(pattern = "QC",x = toupper(the_sample_name),fixed=T)){
-  #   return(toupper("Quebec"))
-  # }
-  # if ((grepl(pattern = "LV_",x = toupper(the_sample_name),fixed=T))|(grepl(pattern = "LVL_",x = toupper(the_sample_name),fixed=T))){
-  #   return(toupper("Laval"))
-  # }
-  # if ((grepl(pattern = "CTRL",x = toupper(the_sample_name),fixed=T))|(grepl(pattern = "CONTROL",x = toupper(the_sample_name),fixed=T))){
-  #   return("")
-  # }
-  # if (!grepl(pattern = "_",x = the_sample_name,fixed=T)){
-  #   return(toupper(the_sample_name))
-  # }else{
-  #   pos_location <- gregexpr(pattern = "_",text = the_sample_name,fixed = T)[[1]][1]
-  #   return(toupper(substr(the_sample_name,start=1,stop=pos_location-1)))
-  # }
 }
 #get sample site
 get_site_of_sample <- function(the_sample_name){
   return(subset(df_sample_stratifications_of_interest,Sample==the_sample_name)$site_name[1])
 }
-# get_site_of_sample <- function(the_sample_name){
-#   if (sum(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))==1){
-#     return(subset(df_Metadata_samples,unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))$Sampling_site[1])
-#   }else{
-#     if (any(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T))), FUN.VALUE = c(T))))){
-#       if ((grepl(pattern = "GRB",x = toupper(the_sample_name),fixed=T))|(grepl(pattern = "GRAB",x = toupper(the_sample_name),fixed=T))){
-#         return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "GRB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "GRAB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_site[1])
-#       }else{
-#         return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "CPT",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "COMPOSITE",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_site[1])
-#       }
-#     }else{
-#       if (grepl(pattern = "QC-WW-N",x = the_sample_name,fixed = T)|grepl(pattern = "Qc-N",x = the_sample_name,fixed = T)){
-#         return("QC-North")
-#       }else if (grepl(pattern = "MTL-WW-N",x = the_sample_name,fixed = T)){
-#         return("MTL-North")
-#       }else if (grepl(pattern = "MTL-North",x = the_sample_name,fixed = T)|grepl(pattern = "MTLN",x = the_sample_name,fixed = T)){
-#         return("MTL-North")
-#       }else if (grepl(pattern = "MTL-South",x = the_sample_name,fixed = T)){
-#         return("MTL-South")
-#       }else if (grepl(pattern = "CDN05",x = the_sample_name,fixed = T)){
-#         return("CDN05")
-#       }else if (grepl(pattern = "BORD16",x = the_sample_name,fixed = T)){
-#         return("BORD16")
-#       }else if (grepl(pattern = "Anjou",x = the_sample_name,fixed = T)){
-#         return("Anjou")
-#       }else if (grepl(pattern = "Mtl",x = the_sample_name,fixed = T)&grepl(pattern = "VSL-11",x = the_sample_name,fixed = T)){
-#         return("MTL_VSL-11")
-#       }else if (grepl(pattern = "MTL",x = the_sample_name,fixed = T)&grepl(pattern = "Vstl-III",x = the_sample_name,fixed = T)){
-#         return("MTL_Vstl-III")
-#       }else if (grepl(pattern = "ON_",x = the_sample_name,fixed = T)&grepl(pattern = "HRS",x = the_sample_name,fixed = T)){
-#         return("ON_HRS")
-#       }else if (grepl(pattern = "ON_",x = the_sample_name,fixed = T)&grepl(pattern = "APS",x = the_sample_name,fixed = T)){
-#         return("ON_APS")
-#       }else if (grepl(pattern = "ON_",x = the_sample_name,fixed = T)&grepl(pattern = "HPS",x = the_sample_name,fixed = T)){
-#         return("ON_HPS")
-#       }else if (grepl(pattern = "OTT",x = the_sample_name,fixed = T)&grepl(pattern = "UKB1777",x = the_sample_name,fixed = T)){
-#         return("ON_APS")
-#       }else if (grepl(pattern = "OTT-OTHERS",x = the_sample_name,fixed = T)){
-#         return("OTTAWA")
-#       }else if (grepl(pattern = "OTT",x = the_sample_name,fixed = T)&grepl(pattern = "-N-",x = the_sample_name,fixed = T)){
-#         return("OTTAWA")
-#       }else if (grepl(pattern = "OTT",x = the_sample_name,fixed = T)&grepl(pattern = "UKB1777",x = the_sample_name,fixed = T)){
-#         return("ON_APS")
-#       }else if (grepl(pattern = "Qc",x = the_sample_name,fixed = T)&grepl(pattern = "West",x = the_sample_name,fixed = T)){
-#         return("Qc_West")
-#       }else if (grepl(pattern = "Qc",x = the_sample_name,fixed = T)&grepl(pattern = "East",x = the_sample_name,fixed = T)){
-#         return("Qc_East")
-#       }else{
-#         return("NA")
-#       }
-#     }
-#   }
-# }
+
 #get the type of site with the sample name
 get_site_type_of_sample <- function(the_sample_name){
   return(subset(df_sample_stratifications_of_interest,Sample==the_sample_name)$Site_type[1])
