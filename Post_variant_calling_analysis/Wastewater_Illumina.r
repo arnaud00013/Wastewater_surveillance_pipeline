@@ -33,11 +33,13 @@ library("mgcv")
 library("session")
 #import script arguments
 #workspace with all the .bam and .tab files
-output_workspace <- as.character(commandArgs(TRUE)[1])
+output_workspace <- as.character(commandArgs(TRUE)[1]) #TO UPDATE
 #name of the depth report file 
 depth_report_filename <- "common_depth_report.csv"
 #name of the reference genome fasta file
 fasta_refseq_filename <- "MN908947_3.fasta"
+#Number of cores to use during parallel processing
+nb_cores <- 3 #TO UPDATE
 
 palette_mutations_of_interest <- RColorBrewer::brewer.pal(length(c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")),"Set1")
 names(palette_mutations_of_interest) <- c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")
@@ -420,7 +422,6 @@ df_depth <- unique(df_depth)
 # v_lst_unique_amplicons <- unique(df_amplicon_positions$amplicon_name)
 # df_plot_mean_cov_per_sample_by_amplicon <- data.frame(Sample=rep(sort(unique(df_depth$sample)),length(v_lst_unique_amplicons)),amplicon=rep(v_lst_unique_amplicons,nb_samples_original),avg_cov=NA,breadth_of_cov=NA,stringsAsFactors = F)
 # 
-# nb_cores <- 5 
 # lst_splits <- split(1:nrow(df_plot_mean_cov_per_sample_by_amplicon), ceiling(seq_along(1:nrow(df_plot_mean_cov_per_sample_by_amplicon))/(nrow(df_plot_mean_cov_per_sample_by_amplicon)/nb_cores)))
 # the_f_parallel <- function(i_cl){
 #   the_vec<- lst_splits[[i_cl]]
@@ -1286,7 +1287,6 @@ df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues$p
 for (indx_row in 1:nrow(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues)){
   v_the_concordance_score_at_selected_thresholds <- subset(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts,(min_nb_signature_muts_detected==current_min_nb_signature_muts_detected)&(max_time_gap_tolerated==current_max_time_gap))$concordance_score
   nb_perms <- 999
-  nb_cores <- 5
   lst_splits <- split(1:nb_perms, ceiling(seq_along(1:nb_perms)/(nb_perms/nb_cores)))
   the_f_parallel <- function(i_cl){
     the_vec<- lst_splits[[i_cl]]
@@ -1608,7 +1608,6 @@ ggsave(filename = "Nb_mutations_per_Control_sample.png", path=output_workspace, 
 #list of samples in which lineages are detected
 lst_unique_samples_for_PANGOlin_detection <- sort(unique(df_detected_marker_mutations_in_ww_samples$Sample))
 #define parallelization parameters
-nb_cores <-  5
 lst_splits <- split(1:length(lst_unique_samples_for_PANGOlin_detection), ceiling(seq_along(1:length(lst_unique_samples_for_PANGOlin_detection))/(length(lst_unique_samples_for_PANGOlin_detection)/nb_cores)))
 #Lineages pre-selection based on number of signature mutations + X=prevalence
 the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_prevalence <- function(i_cl){
