@@ -1,5 +1,4 @@
-﻿Column1;Column2;Column3;Column4;Column5;Column6;Column7;Column8
-Label ID;date;site_name ;City;Site_type ;Location_in_network;Collector_type;
+﻿Label ID;date;site_name ;City;Site_type ;Location_in_network;Collector_type;
 LV_A_2021_03-21_2-1392772_S369_L002;2021-03-21;01-A_Auteuil;Laval;WW treatment plant;Auteuil;Composite;
 LV_A_2021_03-22_2-1392758_S355_L002;2021-03-22;01-A_Auteuil;Laval;WW treatment plant;Auteuil;Composite;
 LV_A_2021-03-23_2-1392760_S357_L002;2021-03-23;01-A_Auteuil;Laval;WW treatment plant;Auteuil;Composite;
