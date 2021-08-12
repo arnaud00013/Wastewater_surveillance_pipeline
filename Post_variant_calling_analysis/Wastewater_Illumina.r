@@ -462,8 +462,8 @@ df_depth <- unique(df_depth)
 # write.table(x=df_amplicons_proportion_samples_with_low_coverage,file = paste0(output_workspace,"Table_amplicons_metadata_and_coverage_analysis_results.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
 
 #per genomic region
-ggplot(data = subset(df_amplicons_proportion_samples_with_low_coverage,!is.na(ORF)),mapping=aes(x=factor(ORF,levels=v_orfs),y=proportion_of_samples_with_mean_depth_lower_than_100x)) + geom_violin(fill="red3") + geom_boxplot(width=0.05) + geom_jitter() + xlab("Genomic region") + ylab("Proportion of samples in which amplicon mean depth < 100") + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=10,angle = 60,hjust=1))
-ggsave(filename = "Distribution_of_proportion_samples_in_which_amplicon_has_low_coverage_per_Genomic_region.png", path=output_workspace, width = 20, height = 15, units = "cm")
+#ggplot(data = subset(df_amplicons_proportion_samples_with_low_coverage,!is.na(ORF)),mapping=aes(x=factor(ORF,levels=v_orfs),y=proportion_of_samples_with_mean_depth_lower_than_100x)) + geom_violin(fill="red3") + geom_boxplot(width=0.05) + geom_jitter() + xlab("Genomic region") + ylab("Proportion of samples in which amplicon mean depth < 100") + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=10,angle = 60,hjust=1))
+#ggsave(filename = "Distribution_of_proportion_samples_in_which_amplicon_has_low_coverage_per_Genomic_region.png", path=output_workspace, width = 20, height = 15, units = "cm")
 
 #PCA of samples by SNVs VAF
 mtx_VAF_per_sample <- (as.matrix((reshape2::acast(df_variants, Sample~mutation_name, value.var="VarFreq"))))
