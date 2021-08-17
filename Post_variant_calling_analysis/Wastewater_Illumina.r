@@ -211,6 +211,54 @@ palette_genes <- distinctColorPalette(length(v_genes_with_unique_product))
 names(palette_genes) <- v_genes_with_unique_product
 # pie(rep(1, length(v_genes_with_unique_product)), col=palette_genes)
 
+#function to get mutation in genomic format
+find_candidate_genomic_mutation_causing_aa_change_in_orf <- function(current_mutation_name){
+  the_orf <- strsplit(x = current_mutation_name,split = ":")[[1]][1]
+  the_mut <-strsplit(x = current_mutation_name,split = ":")[[1]][2]
+  old_aa <- substr(the_mut,1,1)
+  new_aa <- substr(the_mut,nchar(the_mut),nchar(the_mut))
+  pos_in_orf_prot_seq <- as.integer(substr(the_mut,2,nchar(the_mut)-1))
+  pos_start_codon_in_orf <- ((pos_in_orf_prot_seq-1)*3)+1
+  pos_middle_codon_in_orf <- pos_start_codon_in_orf + 1
+  pos_stop_codon_in_orf <- pos_start_codon_in_orf + 2
+  pos_start_codon_in_genome <- v_start_orfs[the_orf] + pos_start_codon_in_orf - 1
+  pos_middle_codon_in_genome <- v_start_orfs[the_orf] + pos_middle_codon_in_orf - 1
+  pos_stop_codon_in_genome <- v_start_orfs[the_orf] + pos_stop_codon_in_orf - 1
+  ref_codon <- substr(genome_refseq,pos_start_codon_in_genome,pos_stop_codon_in_genome)
+  if (old_aa!=translate_seq(the_codon = ref_codon)){
+    stop("Logical error: extracted reference codon does not translate into old aa!")
+  }
+  v_candidate_genomic_mutations <- NULL
+  for (pos_in_codon in 1:3){
+    for (current_new_nucl in setdiff(c("A","T","C","G"),substr(ref_codon,pos_in_codon,pos_in_codon))){
+      if (pos_in_codon ==1){
+        new_codon <- paste0(current_new_nucl,substr(ref_codon,2,3))
+      }else if (pos_in_codon ==2){
+        new_codon <- paste0(substr(ref_codon,1,1),current_new_nucl,substr(ref_codon,3,3))
+      }else if (pos_in_codon ==3){
+        new_codon <- paste0(substr(ref_codon,1,1),substr(ref_codon,2,2),current_new_nucl)
+      }else{
+        stop("Logical error: position in codon cannot be different than 1, 2 or 3!")
+      }
+      if (translate_seq(new_codon)==new_aa){
+        v_candidate_genomic_mutations <- c(v_candidate_genomic_mutations,paste0(substr(ref_codon,pos_in_codon,pos_in_codon),pos_start_codon_in_genome+pos_in_codon-1,current_new_nucl))
+      }
+    }
+  }
+  return(v_candidate_genomic_mutations)
+}
+
+#compute Shannon entropy
+get_entropy <- function(target) {
+  freq <- table(target)/length(target)
+  # vectorize
+  vec <- as.data.frame(freq)[,2]
+  #drop 0 to avoid NaN resulting from log2
+  vec<-vec[vec>0]
+  #compute entropy
+  -sum(vec * log2(vec))
+}
+
 #function that find the original and mutated codons of a variant
 get_ref_and_mutated_codon <- function(the_position,ref_nucl,new_nucl){
   the_orf <- find_ORF_of_mutation(the_position)
@@ -987,7 +1035,7 @@ ggplot(data = df_plot_prevalence_PANGO_lineage_per_site,mapping=aes(x=site,y=x))
 ggsave(filename = "prevalence_PANGO_lineage_per_site.png", path=output_workspace, width = 40, height = 20, units = "cm")
 
 
-#df_variants$month_year <- format(as.Date(df_variants$date,"%Y-%m-%d"),"%Y-%m")
+df_variants$month_year <- format(as.Date(df_variants$date,"%Y-%m-%d"),"%Y-%m")
 v_lst_year_month <- c(paste0("2020-",c("01","02","03","04","05","06","07","08","09","10","11","12")),sort(intersect(format(as.Date(df_variants$date,"%Y-%m-%d"),"%Y-%m"), paste0("2021-",c("01","02","03","04","05","06","07","08","09","10","11","12")))))
 v_lst_unique_locations <- sort(unique(df_variants$location))
 
@@ -1001,6 +1049,9 @@ v_unique_Collector_type <- v_unique_Collector_type[v_unique_Collector_type!=""]
 v_unique_site <- sort(unique(df_sample_stratifications_of_interest$site))
 v_unique_site <- v_unique_site[v_unique_site!=""]
 #Effect of site_type on WW detections
+df_detected_marker_mutations_in_ww_samples$month_year <-  format(as.Date(df_detected_marker_mutations_in_ww_samples$date,"%Y-%m-%d"),"%Y-%m")
+df_unique_detections_PANGO_lin <- unique(df_detected_marker_mutations_in_ww_samples[,c("Sample","date","month_year","location","PANGO_lineage","str_signature_mutations","nb_signature_mutations","stringent_confidence_score","coverage_adjusted_confidence_score")])
+df_unique_detections_PANGO_lin <- subset(df_unique_detections_PANGO_lin, date != "2021-02-29")
   #Add site_type to dataframes
 df_variants$site_type <- unname(vapply(X = df_variants$Sample,FUN = get_site_type_of_sample,FUN.VALUE = c("")))
 df_unique_detections_PANGO_lin$site_type <- unname(vapply(X = df_unique_detections_PANGO_lin$Sample,FUN = get_site_type_of_sample,FUN.VALUE = c("")))
@@ -1229,8 +1280,6 @@ v_site_to_RSS <- df_HospCenter$RSS
 names(v_site_to_RSS) <- df_HospCenter$Prefix
 df_metadata_LSPQ_samples$RSS <- ifelse(test=is.na(df_metadata_LSPQ_samples$site),yes=NA,no=v_site_to_RSS[df_metadata_LSPQ_samples$site])
 df_metadata_LSPQ_samples$RSS <- toupper(df_metadata_LSPQ_samples$RSS)
-df_unique_detections_PANGO_lin <- unique(df_detected_marker_mutations_in_ww_samples[,c("Sample","date","location","PANGO_lineage","str_signature_mutations","nb_signature_mutations","stringent_confidence_score","coverage_adjusted_confidence_score")])
-df_unique_detections_PANGO_lin <- subset(df_unique_detections_PANGO_lin, date != "2021-02-29")
 for (i in 1:nrow(df_metadata_LSPQ_samples)){
   if (grepl(pattern = "B.1.617",x = df_metadata_LSPQ_samples$PANGOLIN[i],fixed = T)){
     df_metadata_LSPQ_samples$PANGOLIN[i] <- "B.1.617.X"
@@ -1596,6 +1645,7 @@ df_variants_Controls$mutation_name <- paste0(paste0(df_variants_Controls$Ref,df_
 #Define Nonsense and non-coding mutations
 df_variants_Controls$is_nonsense <- (df_variants_Controls$new_aa=="Stop")
 df_variants_Controls$is_UTR <- (is.na(df_variants_Controls$new_aa))
+lst_control_samples <- unique(df_variants_Controls$Sample)
 v_nb_SNVs_per_Control_sample <- as.vector(table(df_variants_Controls$Sample)[lst_control_samples])
 names(v_nb_SNVs_per_Control_sample) <- lst_control_samples
 v_nb_SNVs_per_Control_sample <- ifelse(test = is.na(v_nb_SNVs_per_Control_sample),yes=0,no=v_nb_SNVs_per_Control_sample)
