@@ -156,6 +156,11 @@ for (i in (1:nrow(df_sample_stratifications_of_interest))){
     df_sample_stratifications_of_interest$date[i] <- paste0(third_term,"-",second_term,"-",first_term)
   }
 }
+
+#get the collection date of a sample
+get_date_of_sample <- function(the_sample_name){
+  return(subset(df_sample_stratifications_of_interest,Sample==the_sample_name)$date[1])
+}
 get_location_from_sample_name_with_location <- function(the_sample_name){
   return(toupper(subset(df_sample_stratifications_of_interest,Sample==the_sample_name)$City[1]))
 }
@@ -488,7 +493,7 @@ df_depth <- unique(df_depth)
 # }
 # cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_df_plot_mean_cov_per_sample_by_amplicon.txt"))
 # registerDoParallel(cl)
-# df_plot_mean_cov_per_sample_by_amplicon <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings"))  %dopar% the_f_parallel(i_cl)
+# df_plot_mean_cov_per_sample_by_amplicon <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel"))  %dopar% the_f_parallel(i_cl)
 # stopCluster(cl)
 # df_plot_mean_cov_per_sample_by_amplicon <- unique(df_plot_mean_cov_per_sample_by_amplicon)
 # saveRDS(df_plot_mean_cov_per_sample_by_amplicon,paste0(output_workspace,"df_plot_mean_cov_per_sample_by_amplicon.rds"))
@@ -552,13 +557,13 @@ ggsave(filename = "Dimensional_reduction_tSNE_WW_samples_by_sites.png", path=out
 
 #PERMANOVA
 mtx_sample_dist <- vegan::vegdist(mtx_VAF_per_sample, method='bray')
-set.seed(1234)#reproducible results
-permanova_sample_vaf_profile_vs_location <- adonis2(mtx_sample_dist~location_samples, permutations = 9999, method="bray", strata="PLOT")
-permanova_sample_vaf_profile_vs_location
+#set.seed(1234)#reproducible results
+#permanova_sample_vaf_profile_vs_location <- adonis2(mtx_sample_dist~location_samples, permutations = 9999, method="bray", strata="PLOT")
+#permanova_sample_vaf_profile_vs_location
 mtx_sample_dist_for_sites <- vegan::vegdist(mtx_VAF_per_sample[!is.na(site_samples),], method='bray')
 site_samples_for_sites <- site_samples[!is.na(site_samples)]
-permanova_sample_vaf_profile_vs_site <- adonis2(mtx_sample_dist_for_sites~site_samples_for_sites, permutations = 9999, method="bray", strata="PLOT")
-permanova_sample_vaf_profile_vs_site
+#permanova_sample_vaf_profile_vs_site <- adonis2(mtx_sample_dist_for_sites~site_samples_for_sites, permutations = 9999, method="bray", strata="PLOT")
+#permanova_sample_vaf_profile_vs_site
 
 #Heatmap_mean_cov_per_sample_for_each_amplicon
 # svg(paste0(output_workspace,"Heatmap_mean_cov_per_sample_for_each_amplicon.svg"),width=20/2.54,height=16/2.54)
@@ -669,94 +674,94 @@ Nb_mutations_per_sample_gg
 ggsave(filename = "Nb_mutations_per_sample.png", path=output_workspace, width = 20, height = 15, units = "cm")
 summary(df_plot_nb_mutations_per_sample$x);sd(df_plot_nb_mutations_per_sample$x);
 
-#add collection date to df_variants 
-get_date_of_sample <- function(the_sample_name){
-  if (sum(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))==1){
-    return(subset(df_Metadata_samples,unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))$Sampling_date[1])
-  }else{
-    if (any(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T))), FUN.VALUE = c(T))))){
-      if ((grepl(pattern = "GRB",x = toupper(the_sample_name),fixed=T))|(grepl(pattern = "GRAB",x = toupper(the_sample_name),fixed=T))){
-        return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "GRB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "GRAB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_date[1])
-      }else{
-        return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "CPT",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "COMPOSITE",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_date[1])
-      }
-    }else{
-      return("NA")
-    }
-  }
-}
+# #add collection date to df_variants 
+# get_date_of_sample <- function(the_sample_name){
+#   if (sum(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))==1){
+#     return(subset(df_Metadata_samples,unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_sample[j]),x = toupper(the_sample_name),fixed=T)&(grepl(pattern = df_Metadata_samples$label_search_sample[j],x = the_sample_name,fixed=T))&(!is.na(df_Metadata_samples$Sampling_date[j])), FUN.VALUE = c(T))))$Sampling_date[1])
+#   }else{
+#     if (any(unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T))), FUN.VALUE = c(T))))){
+#       if ((grepl(pattern = "GRB",x = toupper(the_sample_name),fixed=T))|(grepl(pattern = "GRAB",x = toupper(the_sample_name),fixed=T))){
+#         return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "GRB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "GRAB",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_date[1])
+#       }else{
+#         return(subset(df_Metadata_samples, unname(vapply(X = 1:nrow(df_Metadata_samples),FUN = function(j) grepl(pattern = toupper(df_Metadata_samples$label_search_location[j]),x = toupper(the_sample_name),fixed=T)&((grepl(pattern = df_Metadata_samples$label_search_date_format_1[j],x = the_sample_name,fixed=T))|(grepl(pattern = df_Metadata_samples$label_search_date_format_2[j],x = the_sample_name,fixed=T)))&(!is.na(df_Metadata_samples$Sampling_date[j]))&((grepl(pattern = df_Metadata_samples$label_search_site_id_1[j],x = the_sample_name,fixed=T))|((grepl(pattern = df_Metadata_samples$label_cardinal_point[j],x = toupper(the_sample_name),fixed=T))&(!is.na(df_Metadata_samples$label_cardinal_point[j])))|(grepl(pattern = df_Metadata_samples$label_search_site_id_2[j],x = the_sample_name,fixed=T)))&((grepl(pattern = "CPT",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))|(grepl(pattern = "COMPOSITE",x = toupper(df_Metadata_samples$Sample[j]),fixed=T))), FUN.VALUE = c(T))))$Sampling_date[1])
+#       }
+#     }else{
+#       return("NA")
+#     }
+#   }
+# }
 
 df_variants$date <- unname(vapply(X = df_variants$Sample,FUN = get_date_of_sample,FUN.VALUE = c("")))
 df_variants$date <- ifelse(test=df_variants$date=="NA",yes=NA,no=df_variants$date)
 
-get_date_from_sample_name_with_date_en <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "_202",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year + 1
-  pos_end_date <- pos_year + 10
-  return(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date))
-}
-get_date_from_sample_name_with_date_en2 <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "-202",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year + 1
-  pos_end_date <- pos_year + 10
-  return(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date))
-}
-df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "_202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_en,FUN.VALUE = c(""))),no = df_variants$date)
-df_variants$date <- gsub(pattern = "2021_",replacement = "2021-",x = df_variants$date,fixed = T)
-df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_en2,FUN.VALUE = c(""))),no = df_variants$date)
+# get_date_from_sample_name_with_date_en <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "_202",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year + 1
+#   pos_end_date <- pos_year + 10
+#   return(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date))
+# }
+# get_date_from_sample_name_with_date_en2 <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "-202",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year + 1
+#   pos_end_date <- pos_year + 10
+#   return(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date))
+# }
+# df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "_202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_en,FUN.VALUE = c(""))),no = df_variants$date)
+# df_variants$date <- gsub(pattern = "2021_",replacement = "2021-",x = df_variants$date,fixed = T)
+# df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_en2,FUN.VALUE = c(""))),no = df_variants$date)
+# # 
+# get_date_from_ON_20_samples_with_date <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "-20_",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year - 5
+#   pos_end_date <- pos_year + 2
+#   str_date <- paste0(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date-2),"20",substr(x = the_sample_name,start=pos_end_date-1,stop=pos_end_date))
+#   return(format(as.Date(str_date,format="%d-%m-%Y"),"%Y-%m-%d"))
+# }
+# df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-20_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_ON_20_samples_with_date,FUN.VALUE = c(""))),no = df_variants$date)
 # 
-get_date_from_ON_20_samples_with_date <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "-20_",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year - 5
-  pos_end_date <- pos_year + 2
-  str_date <- paste0(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date-2),"20",substr(x = the_sample_name,start=pos_end_date-1,stop=pos_end_date))
-  return(format(as.Date(str_date,format="%d-%m-%Y"),"%Y-%m-%d"))
-}
-df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-20_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_ON_20_samples_with_date,FUN.VALUE = c(""))),no = df_variants$date)
-
-get_date_from_ON_21_samples_with_date <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "-21_",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year - 5
-  pos_end_date <- pos_year + 2
-  str_date <- paste0(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date-2),"20",substr(x = the_sample_name,start=pos_end_date-1,stop=pos_end_date))
-  return(format(as.Date(str_date,format="%d-%m-%Y"),"%Y-%m-%d"))
-}
-df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-21_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_ON_21_samples_with_date,FUN.VALUE = c(""))),no = df_variants$date)
-
-get_date_from_sample_name_with_date_fr <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "-2020_",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year - 5
-  pos_end_date <- pos_year + 4
-  return(format(as.Date(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date),format="%d-%m-%Y"),"%Y-%m-%d"))
-}
-df_variants$date <- ifelse(test = (unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-2020_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_fr,FUN.VALUE = c(""))),no = df_variants$date)
-
-get_date_from_sample_name_with_date_fr2 <- function(the_sample_name){
-  pos_year <- gregexpr(pattern = "-2021_",text = the_sample_name,fixed = T)[[1]][1]
-  pos_start_date <- pos_year - 5
-  pos_end_date <- pos_year + 4
-  
-  return(format(as.Date(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date),format="%d-%m-%Y"),"%Y-%m-%d"))
-}
-df_variants$date <- ifelse(test = (unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-2021_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_fr2,FUN.VALUE = c(""))),no = df_variants$date)
+# get_date_from_ON_21_samples_with_date <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "-21_",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year - 5
+#   pos_end_date <- pos_year + 2
+#   str_date <- paste0(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date-2),"20",substr(x = the_sample_name,start=pos_end_date-1,stop=pos_end_date))
+#   return(format(as.Date(str_date,format="%d-%m-%Y"),"%Y-%m-%d"))
+# }
+# df_variants$date <- ifelse(test = (is.na(df_variants$date))&(unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-21_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_ON_21_samples_with_date,FUN.VALUE = c(""))),no = df_variants$date)
+# 
+# get_date_from_sample_name_with_date_fr <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "-2020_",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year - 5
+#   pos_end_date <- pos_year + 4
+#   return(format(as.Date(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date),format="%d-%m-%Y"),"%Y-%m-%d"))
+# }
+# df_variants$date <- ifelse(test = (unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-2020_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_fr,FUN.VALUE = c(""))),no = df_variants$date)
+# 
+# get_date_from_sample_name_with_date_fr2 <- function(the_sample_name){
+#   pos_year <- gregexpr(pattern = "-2021_",text = the_sample_name,fixed = T)[[1]][1]
+#   pos_start_date <- pos_year - 5
+#   pos_end_date <- pos_year + 4
+#   
+#   return(format(as.Date(substr(x = the_sample_name,start=pos_start_date,stop=pos_end_date),format="%d-%m-%Y"),"%Y-%m-%d"))
+# }
+# df_variants$date <- ifelse(test = (unname(vapply(X = df_variants$Sample,FUN = function(x) grepl(pattern = "-2021_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = df_variants$Sample,FUN=get_date_from_sample_name_with_date_fr2,FUN.VALUE = c(""))),no = df_variants$date)
 
 v_samples_date <- rep(NA, length(lst_samples_original))
 names(v_samples_date) <- lst_samples_original
 v_samples_date <- unname(vapply(X = names(v_samples_date),FUN = get_date_of_sample,FUN.VALUE = c("")))
 v_samples_date <- ifelse(test=v_samples_date=="NA",yes=NA,no=v_samples_date)
 names(v_samples_date) <- lst_samples_original
-v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = names(v_samples_date),FUN = function(x) grepl(pattern = "_202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = names(v_samples_date),FUN=get_date_from_sample_name_with_date_en,FUN.VALUE = c(""))),no = v_samples_date)
-names(v_samples_date) <- lst_samples_original
-v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = names(v_samples_date),FUN = function(x) grepl(pattern = "-202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = names(v_samples_date),FUN=get_date_from_sample_name_with_date_en2,FUN.VALUE = c(""))),no = v_samples_date)
-names(v_samples_date) <- lst_samples_original
-v_samples_date <- gsub(pattern = "2021_",replacement = "2021-",x = v_samples_date,fixed = T)
-names(v_samples_date) <- lst_samples_original
-v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-20_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_ON_20_samples_with_date,FUN.VALUE = c(""))),no = v_samples_date)
-v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-21_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_ON_21_samples_with_date,FUN.VALUE = c(""))),no = v_samples_date)
-names(v_samples_date) <- lst_samples_original
-v_samples_date <- ifelse(test = (unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-2020_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_sample_name_with_date_fr,FUN.VALUE = c(""))),no = v_samples_date)
-v_samples_date <- ifelse(test = (unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-2021_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_sample_name_with_date_fr2,FUN.VALUE = c(""))),no = v_samples_date)
-names(v_samples_date) <- lst_samples_original
+# v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = names(v_samples_date),FUN = function(x) grepl(pattern = "_202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = names(v_samples_date),FUN=get_date_from_sample_name_with_date_en,FUN.VALUE = c(""))),no = v_samples_date)
+# names(v_samples_date) <- lst_samples_original
+# v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = names(v_samples_date),FUN = function(x) grepl(pattern = "-202",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = names(v_samples_date),FUN=get_date_from_sample_name_with_date_en2,FUN.VALUE = c(""))),no = v_samples_date)
+# names(v_samples_date) <- lst_samples_original
+# v_samples_date <- gsub(pattern = "2021_",replacement = "2021-",x = v_samples_date,fixed = T)
+# names(v_samples_date) <- lst_samples_original
+# v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-20_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_ON_20_samples_with_date,FUN.VALUE = c(""))),no = v_samples_date)
+# v_samples_date <- ifelse(test = (is.na(v_samples_date))&(unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-21_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_ON_21_samples_with_date,FUN.VALUE = c(""))),no = v_samples_date)
+# names(v_samples_date) <- lst_samples_original
+# v_samples_date <- ifelse(test = (unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-2020_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_sample_name_with_date_fr,FUN.VALUE = c(""))),no = v_samples_date)
+# v_samples_date <- ifelse(test = (unname(vapply(X = lst_samples_original,FUN = function(x) grepl(pattern = "-2021_",x = x,fixed = T),FUN.VALUE = c(T)))),yes = unname(vapply(X = lst_samples_original,FUN=get_date_from_sample_name_with_date_fr2,FUN.VALUE = c(""))),no = v_samples_date)
+# names(v_samples_date) <- lst_samples_original
 write.table(x = names(v_samples_date)[is.na(v_samples_date)],file = paste0(output_workspace,"List_samples_with_missing_sampling_date_ALL_ILLUMINA_SAMPLES.csv"),sep = ",",row.names = F,col.names = F)
 paste0("Number of samples with a MISSING sampling date = ",nb_samples_original - sum(!is.na(v_samples_date))," out of ",nb_samples_original,"!")
 
@@ -1366,7 +1371,7 @@ for (indx_row in 1:nrow(df_concordance_score_PANGO_lineages_inference_with_abs_n
   }
   cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_Concordance_analysis.txt"))
   registerDoParallel(cl)
-  current_threshold_set_df_concordance_score_PANGO_lineages_inference_after_permutation <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings"))  %dopar% the_f_parallel(i_cl)
+  current_threshold_set_df_concordance_score_PANGO_lineages_inference_after_permutation <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel"))  %dopar% the_f_parallel(i_cl)
   stopCluster(cl)
   
   df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues$p.value[indx_row] <- sum(current_threshold_set_df_concordance_score_PANGO_lineages_inference_after_permutation$concordance_score >= v_the_concordance_score_at_selected_thresholds)/nrow(current_threshold_set_df_concordance_score_PANGO_lineages_inference_after_permutation)
@@ -1767,7 +1772,7 @@ the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_prevalence <- function(i_
 }
 cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_PANGO_lineages_Freq_Estimation_analysis_preselect_based_on_nb_sig_muts_and_X_is_prevalence.txt"))
 registerDoParallel(cl)
-df_sample_PANGO_lineages_frequencies_preselect_based_on_nb_sig_muts_and_X_is_prevalence <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings","glmnet","FD","vegan","ConsReg"))  %dopar% the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_prevalence(i_cl)
+df_sample_PANGO_lineages_frequencies_preselect_based_on_nb_sig_muts_and_X_is_prevalence <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","glmnet","FD","vegan","ConsReg"))  %dopar% the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_prevalence(i_cl)
 stopCluster(cl)
 
 #Result of Lineage Frequencies estimation analysis
@@ -1895,7 +1900,7 @@ the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_binary <- function(i_cl){
 }
 cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_PANGO_lineages_Freq_Estimation_analysis_preselect_based_on_nb_sig_muts_and_X_is_binary.txt"))
 registerDoParallel(cl)
-df_sample_PANGO_lineages_frequencies_preselect_based_on_nb_sig_muts_and_X_is_binary <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings","glmnet","FD","vegan","ConsReg"))  %dopar% the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_binary(i_cl)
+df_sample_PANGO_lineages_frequencies_preselect_based_on_nb_sig_muts_and_X_is_binary <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","glmnet","FD","vegan","ConsReg"))  %dopar% the_f_parallel_preselect_based_on_nb_sig_muts_and_X_is_binary(i_cl)
 stopCluster(cl)
 
 #Result of Lineage Frequencies estimation analysis
@@ -1943,493 +1948,6 @@ for (current_sample in sort(unique(df_sample_PANGO_lineages_frequencies_preselec
 #Compare distributions of residuals between signature only and marker mutations
 ggplot(data = df_residuals_lineage_freq_model_result_preselect_based_on_nb_sig_muts_and_X_is_binary,aes(x=factor(as.character(model_mut_type),levels=c("Signature mutation (not marker)","Marker mutation")),y = residual,fill=factor(as.character(model_mut_type),levels=c("Signature mutation (not marker)","Marker mutation")))) + geom_violin() + geom_jitter() + geom_boxplot(width=0.075,fill="white") + xlab("") + ylab("Residuals (in absolute value)") + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.position = "right",axis.text.x=element_blank(),axis.title.x = element_blank(),axis.ticks.x = element_blank()) + scale_fill_manual(values = c("Signature mutation (not marker)"="Blue","Marker mutation"="red2")) + stat_compare_means(method = "wilcox") + labs(fill="Model mutation type") + scale_y_continuous(limits=c(0,1.1))
 ggsave(filename = "Residuals_Signature_olny_vs_Marker_mutations.png", path=output_workspace, width = 18.3, height = 15, units = "cm",dpi = 1200)
-
-#Lineages pre-selection based on forward selection + X is binary
-current_df_sample_PANGO_lineages_frequencies <- NULL
-#find best linear model for the sample with grid search
-iii <- 1
-for (z in 1:length(lst_unique_samples_for_PANGOlin_detection)){
-  current_sample <- lst_unique_samples_for_PANGOlin_detection[z]
-  print(paste0("Start of current sample freq analysis: ",current_sample))
-  is_the_model_mtx_singular <- F
-  
-  #Signature mutations VAF in sample
-  subset_df_current_sample <- subset(df_variants,(Sample==current_sample)&(label_mut_in_marker_fmt%in%colnames(mtx_is_signature_mutation_lineage)))
-  subset_df_current_sample <- unique(subset_df_current_sample[,c("Sample","label_mut_in_marker_fmt","VarFreq")])
-  #pre-selection with stepwise selection
-  if (length(unique(subset_df_current_sample$label_mut_in_marker_fmt))==1){
-    #Unsolvable case: 1 marker mutation and 1 lineage (no regression possible)
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-    next()
-  }else{
-    X_init <- t(mtx_is_signature_mutation_lineage)[unique(subset_df_current_sample$label_mut_in_marker_fmt),]
-  }
-  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-  Y <- unname(Y[rownames(X_init)])
-  current_sample_data <- as.data.frame(cbind(X_init,Y))
-  colnames(current_sample_data) <- c(colnames(X_init),"var_Y")
-  # Set seed for reproducibility
-  set.seed(123)
-  # Set up repeated k-fold cross-validation
-  train.control <- trainControl(method = "cv", number = 10)
-  nb_included_lins_before_preselect <- 10
-  is_optim_nb_lins_analysis_done <- F
-  while (!is_optim_nb_lins_analysis_done){
-    tryCatch(expr = {step.model <- train(var_Y ~0+., data = current_sample_data,
-                                         method = "leapForward",
-                                         tuneGrid = data.frame(nvmax = 1:nb_included_lins_before_preselect),
-                                         trControl = train.control);is_optim_nb_lins_analysis_done<-T},error=function(e) print(e))
-    nb_included_lins_before_preselect <- nb_included_lins_before_preselect - 1
-    if (nb_included_lins_before_preselect==0){
-      #print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-      is_optim_nb_lins_analysis_done <- T
-      nb_included_lins_before_preselect <- 5
-      current_nv_max <- 5
-    }
-  }
-  if (nb_included_lins_before_preselect==0){
-    iii <- iii+1
-    next()
-  }else{
-    #find the optimal number of variables to select
-    current_nv_max <- unname(step.model$bestTune[1,])
-  }
-  #Do the selection
-  models <- regsubsets(var_Y ~., data = current_sample_data, nvmax = current_nv_max,method = "forward",weights = ifelse(test=rownames(current_sample_data)%in%names(v_lineage_marker_mutations),yes=3,no=1))
-  current_nv_max <- min(max(as.integer(substr(unique(rownames(summary(models)$outmat)),1,1))),current_nv_max)
-  #Save the slected lineages
-  current_lst_candidate_lineages <- colnames(summary(models)$outmat)[summary(models)$outmat[paste0(current_nv_max,"  ( 1 )"),]=="*"]
-  #prevalence data for mutations to fit in the model
-  if (length(current_lst_candidate_lineages)==0){
-    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-    iii <- iii+1
-    next()
-  }else if (is.na(current_lst_candidate_lineages)){
-    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-    iii <- iii+1
-    next()
-  }else if (length(current_lst_candidate_lineages)==1){
-    X <- matrix(mtx_is_signature_mutation_lineage[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt],ncol=1)
-    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-    X <- matrix(X,ncol=1)
-    vec_bool_rownames <- rowSums(X)>0
-    X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
-    X <- matrix(X,ncol=1)
-    rownames(X) <- subset_df_current_sample$label_mut_in_marker_fmt[vec_bool_rownames]
-  }else{
-    X <- t(mtx_is_signature_mutation_lineage[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt])
-    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-    X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
-  }
-  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-  Y <- unname(Y[rownames(X)])
-  
-  #grid search definition for coefficients
-  eval(parse(text=paste0("df_grid_search_combinations <- ",paste0("expand.grid(",paste0(rep("c(0.1,0.5,0.9)", ncol(X)),collapse = ","),")"))))
-  #make sure grid search values respect initial constraints
-  df_grid_search_combinations <- subset(df_grid_search_combinations,(rowSums(df_grid_search_combinations) <= 1))
-  # MCMC grid search
-  current_sample_best_model <- NULL #initialization
-  current_sample_best_model_loglik <- -Inf #initialization
-  for (i in 1:nrow(df_grid_search_combinations)){
-    if (length(current_lst_candidate_lineages)==1){
-      is_the_model_mtx_singular <- T
-      eval(parse(text=paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(X) <= 1,(X) > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-      if (is_the_model_mtx_singular){
-        break()
-      }
-      current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-      if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-        current_sample_best_model <- current_fit
-        current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-      }
-    }else{
-      is_the_model_mtx_singular <- T
-      eval(parse(text= paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(",paste0("X",colnames(X),collapse = " + "),") <= 1,(",paste0("X",colnames(X),collapse = " + "),") > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-      if (is_the_model_mtx_singular){
-        break()
-      }
-      if ((all(summary(current_fit)$coefficients[,"p.value"]<0.05))&(all(!is.na(summary(current_fit)$coefficients[,"p.value"])))){
-        current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-        if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-          current_sample_best_model <- current_fit
-          current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-        }
-      }
-    }
-  }
-  
-  if (is_the_model_mtx_singular){
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-    next()
-  }
-  if (length(current_sample_best_model)>0){
-    Y_predicted <- predict(current_sample_best_model, newdata = data.frame(X))
-    
-    #find SST and SSE
-    sst <- sum((Y - mean(Y))^2)
-    sse <- sum((Y_predicted - Y)^2)
-    
-    #find R-Squared
-    rsq <- 1 - sse/sst
-    adj_rsq <- 1-(((1-rsq)*(nrow(X)-1))/(nrow(X)-ncol(X)-1))
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=current_lst_candidate_lineages,frequency=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"Estimate"])),p.value=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"p.value"])),rsq_sample_model=rsq,adj_rsq_sample_model=adj_rsq,stringsAsFactors = F))
-  }
-  if (iii%%5==0){
-    print(paste0("Core ",i_cl,": ",iii," samples analyzed out of ",length(the_vec),"!"))
-  }
-  iii <- iii + 1
-}
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary <- current_df_sample_PANGO_lineages_frequencies
-
-#Result of Lineage Frequencies estimation analysis
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$date <- v_samples_date[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$Sample]
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$location <- v_samples_location[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$Sample]
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary,!is.na(date))
-#Time series estimated frequencies of lineages of interest
-df_filtered_sample_PANGO_lineages_of_interest_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary,(lineage%in%v_lineages_of_interest)&(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
-df_filtered_sample_PANGO_lineages_of_interest_frequencies$label_lineage <- v_lineages_of_interest_with_who_desgnation[df_filtered_sample_PANGO_lineages_of_interest_frequencies$lineage]
-#Time series lineages frequencies
-ggplot(data = df_filtered_sample_PANGO_lineages_of_interest_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(label_lineage,levels=v_lineages_of_interest_with_who_desgnation[names(sort(table(subset(df_detected_marker_mutations_in_ww_samples,PANGO_lineage%in%v_lineages_of_interest)$PANGO_lineage),decreasing = F))])),position = "stack") +
-  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages") + scale_fill_manual(values=palette_PANGO_lineages_of_interest_with_who_designation)
-ggsave(filename = "Time_series_PANGO_lineage_of_interest_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_binary.png", path=output_workspace, width = 40, height = 20, units = "cm")
-#Time series estimated frequencies of lineages of interest
-df_filtered_sample_PANGO_lineages_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary,(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
-#Time series lineages frequencies
-ggplot(data = df_filtered_sample_PANGO_lineages_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(lineage,levels=names(sort(table(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$lineage),decreasing = F)))),position = "stack") +
-  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages")
-ggsave(filename = "Time_series_all_PANGO_lineages_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_binary.png", path=output_workspace, width = 40, height = 20, units = "cm")
-#Barplot Model results
-df_sample_frequencies_results <- aggregate(x = df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$p.value,by=list(Sample=df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary$Sample),FUN=function(x) ifelse(test=all((x<0.05)&(!is.na(x))),yes="Significant",no=ifelse(test=all((x>=0.05)&(!is.na(x))),yes="Non-significant",no=ifelse(test=all(is.na(x)),yes="Unsolvable",no="Mix"))))
-df_percent_model_results <- data.frame(model_result=c("Significant","Non-significant","Unsolvable"),frequency=c(nrow(subset(df_sample_frequencies_results,x=="Significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Non-significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Unsolvable"))/nrow(df_sample_frequencies_results)))
-ggplot(data = df_percent_model_results,mapping=aes(x=factor(model_result,levels=c("Significant","Non-significant","Unsolvable")),y=frequency)) + geom_col(mapping=aes(fill=factor(model_result,levels=c("Significant","Non-significant","Unsolvable"))),position = "stack") +
-  xlab("") + ylab("Frequency") + theme_bw() + theme(axis.title = element_text(size=12), axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_blank(),axis.title.x=element_blank(),axis.ticks.x = element_blank())+ scale_y_continuous(limits=c(0,1),breaks = seq(0,1,0.1)) + labs(fill="Sample lineage frequency\nmodel result") + scale_fill_manual(values=c("Significant"="blue","Non-significant"="black","Unsolvable"="red"))
-ggsave(filename = "WW_samples_lineage_freq_model_result_per_location_preselect_based_on_forward_selection_and_X_is_binary.png", path=output_workspace, width = 15, height = 15, units = "cm")
-
-# the_f_parallel_preselect_based_on_forward_selection_and_X_is_binary <- function(i_cl){
-#   the_vec<- lst_splits[[i_cl]]
-#   current_df_sample_PANGO_lineages_frequencies <- NULL
-#   #find best linear model for the sample with grid search
-#   iii <- 1
-#   for (z in the_vec){
-#     current_sample <- lst_unique_samples_for_PANGOlin_detection[z]
-#     print(paste0("Start of current sample freq analysis: ",current_sample))
-#     is_the_model_mtx_singular <- F
-# 
-#     #Signature mutations VAF in sample
-#     subset_df_current_sample <- subset(df_variants,(Sample==current_sample)&(label_mut_in_marker_fmt%in%colnames(mtx_is_signature_mutation_lineage)))
-#     subset_df_current_sample <- unique(subset_df_current_sample[,c("Sample","label_mut_in_marker_fmt","VarFreq")])
-#     #pre-selection with stepwise selection
-#     if (length(unique(subset_df_current_sample$label_mut_in_marker_fmt))==1){
-#       #Unsolvable case: 1 marker mutation and 1 lineage (no regression possible)
-#       current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-#       next()
-#     }else{
-#       X_init <- t(mtx_is_signature_mutation_lineage)[unique(subset_df_current_sample$label_mut_in_marker_fmt),]
-#     }
-#     Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-#     names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-#     Y <- unname(Y[rownames(X_init)])
-#     current_sample_data <- as.data.frame(cbind(X_init,Y))
-#     colnames(current_sample_data) <- c(colnames(X_init),"var_Y")
-#     # Set seed for reproducibility
-#     set.seed(123)
-#     # Set up repeated k-fold cross-validation
-#     train.control <- trainControl(method = "cv", number = 10)
-#     nb_included_lins_before_preselect <- 10
-#     is_optim_nb_lins_analysis_done <- F
-#     while (!is_optim_nb_lins_analysis_done){
-#       tryCatch(expr = {step.model <- train(var_Y ~0+., data = current_sample_data,
-#                             method = "leapForward",
-#                             tuneGrid = data.frame(nvmax = 1:nb_included_lins_before_preselect),
-#                             trControl = train.control);is_optim_nb_lins_analysis_done<-T},error=function(e) print(e))
-#       nb_included_lins_before_preselect <- nb_included_lins_before_preselect - 1
-#       if (nb_included_lins_before_preselect==0){
-#         #print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-#         is_optim_nb_lins_analysis_done <- T
-#         nb_included_lins_before_preselect <- 5
-#         current_nv_max <- 5
-#       }
-#     }
-#     if (nb_included_lins_before_preselect==0){
-#       iii <- iii+1
-#       next()
-#     }else{
-#       #find the optimal number of variables to select
-#       current_nv_max <- unname(step.model$bestTune[1,])
-#     }
-#     #Do the selection
-#     models <- regsubsets(var_Y ~., data = current_sample_data, nvmax = current_nv_max,method = "forward",weights = ifelse(test=rownames(current_sample_data)%in%names(v_lineage_marker_mutations),yes=3,no=1))
-#     current_nv_max <- min(max(as.integer(substr(unique(rownames(summary(models)$outmat)),1,1))),current_nv_max)
-#     #Save the slected lineages
-#     current_lst_candidate_lineages <- colnames(summary(models)$outmat)[summary(models)$outmat[paste0(current_nv_max,"  ( 1 )"),]=="*"]
-#     #prevalence data for mutations to fit in the model
-#     if (length(current_lst_candidate_lineages)==0){
-#       print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-#       iii <- iii+1
-#       next()
-#     }else if (is.na(current_lst_candidate_lineages)){
-#       print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-#       iii <- iii+1
-#       next()
-#     }else if (length(current_lst_candidate_lineages)==1){
-#       X <- matrix(mtx_is_signature_mutation_lineage[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt],ncol=1)
-#       X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-#       X <- matrix(X,ncol=1)
-#       vec_bool_rownames <- rowSums(X)>0
-#       X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
-#       X <- matrix(X,ncol=1)
-#       rownames(X) <- subset_df_current_sample$label_mut_in_marker_fmt[vec_bool_rownames]
-#     }else{
-#       X <- t(mtx_is_signature_mutation_lineage[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt])
-#       X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-#       X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
-#     }
-#     Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-#     names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-#     Y <- unname(Y[rownames(X)])
-#     
-#     #grid search definition for coefficients
-#     eval(parse(text=paste0("df_grid_search_combinations <- ",paste0("expand.grid(",paste0(rep("c(0.1,0.5,0.9)", ncol(X)),collapse = ","),")"))))
-#     #make sure grid search values respect initial constraints
-#     df_grid_search_combinations <- subset(df_grid_search_combinations,(rowSums(df_grid_search_combinations) <= 1))
-#     # MCMC grid search
-#     current_sample_best_model <- NULL #initialization
-#     current_sample_best_model_loglik <- -Inf #initialization
-#     for (i in 1:nrow(df_grid_search_combinations)){
-#       if (length(current_lst_candidate_lineages)==1){
-#         is_the_model_mtx_singular <- T
-#         eval(parse(text=paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(X) <= 1,(X) > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-#         tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-#         if (is_the_model_mtx_singular){
-#           break()
-#         }
-#         current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-#         if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-#           current_sample_best_model <- current_fit
-#           current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-#         }
-#       }else{
-#         is_the_model_mtx_singular <- T
-#         eval(parse(text= paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(",paste0("X",colnames(X),collapse = " + "),") <= 1,(",paste0("X",colnames(X),collapse = " + "),") > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-#         tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-#         if (is_the_model_mtx_singular){
-#           break()
-#         }
-#         if ((all(summary(current_fit)$coefficients[,"p.value"]<0.05))&(all(!is.na(summary(current_fit)$coefficients[,"p.value"])))){
-#           current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-#           if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-#             current_sample_best_model <- current_fit
-#             current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-#           }
-#         }
-#       }
-#     }
-# 
-#     if (is_the_model_mtx_singular){
-#       current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-#       next()
-#     }
-#     if (length(current_sample_best_model)>0){
-#       Y_predicted <- predict(current_sample_best_model, newdata = data.frame(X))
-# 
-#       #find SST and SSE
-#       sst <- sum((Y - mean(Y))^2)
-#       sse <- sum((Y_predicted - Y)^2)
-# 
-#       #find R-Squared
-#       rsq <- 1 - sse/sst
-#       adj_rsq <- 1-(((1-rsq)*(nrow(X)-1))/(nrow(X)-ncol(X)-1))
-#       current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=current_lst_candidate_lineages,frequency=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"Estimate"])),p.value=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"p.value"])),rsq_sample_model=rsq,adj_rsq_sample_model=adj_rsq,stringsAsFactors = F))
-#     }
-#     if (iii%%5==0){
-#       print(paste0("Core ",i_cl,": ",iii," samples analyzed out of ",length(the_vec),"!"))
-#     }
-#     iii <- iii + 1
-#   }
-# 
-#   return(current_df_sample_PANGO_lineages_frequencies)
-# }
-# cl <- makeCluster(nb_cores,outfile=paste0(output_workspace,"LOG_PANGO_lineages_Freq_Estimation_analysis_preselect_based_on_forward_selection_and_X_is_binary.txt"))
-# registerDoParallel(cl)
-# df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_binary <- foreach(i_cl = 1:nb_cores, .combine = rbind, .packages=c("ggplot2","seqinr","grid","RColorBrewer","randomcoloR","gplots","RColorBrewer","tidyr","infotheo","parallel","foreach","doParallel","Biostrings","glmnet","FD","vegan","ConsReg","MASS","leaps","caret"))  %dopar% the_f_parallel_preselect_based_on_forward_selection_and_X_is_binary(i_cl)
-# stopCluster(cl)
-
-#Lineages pre-selection based on forward selection + X is prevalence
-current_df_sample_PANGO_lineages_frequencies <- NULL
-#find best linear model for the sample with grid search
-iii <- 1
-for (z in 1:length(lst_unique_samples_for_PANGOlin_detection)){
-  current_sample <- lst_unique_samples_for_PANGOlin_detection[z]
-  print(paste0("Start of current sample freq analysis: ",current_sample))
-  is_the_model_mtx_singular <- F
-  
-  #Signature mutations VAF in sample
-  subset_df_current_sample <- subset(df_variants,(Sample==current_sample)&(label_mut_in_marker_fmt%in%colnames(mtx_is_signature_mutation_lineage)))
-  subset_df_current_sample <- unique(subset_df_current_sample[,c("Sample","label_mut_in_marker_fmt","VarFreq")])
-  #pre-selection with stepwise selection
-  if (length(unique(subset_df_current_sample$label_mut_in_marker_fmt))==1){
-    #Unsolvable case: 1 marker mutation and 1 lineage (no regression possible)
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-    next()
-  }else{
-    X_init <- t(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages)[unique(subset_df_current_sample$label_mut_in_marker_fmt),]
-  }
-  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-  Y <- unname(Y[rownames(X_init)])
-  current_sample_data <- as.data.frame(cbind(X_init,Y))
-  colnames(current_sample_data) <- c(colnames(X_init),"var_Y")
-  # Set seed for reproducibility
-  set.seed(123)
-  # Set up repeated k-fold cross-validation
-  train.control <- trainControl(method = "cv", number = 10)
-  nb_included_lins_before_preselect <- 10
-  is_optim_nb_lins_analysis_done <- F
-  while (!is_optim_nb_lins_analysis_done){
-    tryCatch(expr = {step.model <- train(var_Y ~0+., data = current_sample_data,
-                                         method = "leapForward",
-                                         tuneGrid = data.frame(nvmax = 1:nb_included_lins_before_preselect),
-                                         trControl = train.control);is_optim_nb_lins_analysis_done<-T},error=function(e) print(e))
-    nb_included_lins_before_preselect <- nb_included_lins_before_preselect - 1
-    if (nb_included_lins_before_preselect==0){
-      #print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-      is_optim_nb_lins_analysis_done <- T
-      nb_included_lins_before_preselect <- 5
-      current_nv_max <- 5
-    }
-  }
-  if (nb_included_lins_before_preselect==0){
-    iii <- iii+1
-    next()
-  }else{
-    #find the optimal number of variables to select
-    current_nv_max <- unname(step.model$bestTune[1,])
-  }
-  #Do the selection
-  models <- regsubsets(var_Y ~., data = current_sample_data, nvmax = current_nv_max,method = "forward",weights = ifelse(test=rownames(current_sample_data)%in%names(v_lineage_marker_mutations),yes=3,no=1))
-  current_nv_max <- min(max(as.integer(substr(unique(rownames(summary(models)$outmat)),1,1))),current_nv_max)
-  #Save the slected lineages
-  current_lst_candidate_lineages <- colnames(summary(models)$outmat)[summary(models)$outmat[paste0(current_nv_max,"  ( 1 )"),]=="*"]
-  #prevalence data for mutations to fit in the model
-  if (length(current_lst_candidate_lineages)==0){
-    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-    iii <- iii+1
-    next()
-  }else if (all(is.na(current_lst_candidate_lineages))){
-    print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-    iii <- iii+1
-    next()
-  }else if (length(current_lst_candidate_lineages)==1){
-    X <- matrix(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt],ncol=1)
-    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-    X <- matrix(X,ncol=1)
-    vec_bool_rownames <- rowSums(X)>0
-    X <- X[rowSums(X)>0,] # remove mutations that cannot be explained by the presence of any candidate lineages
-    X <- matrix(X,ncol=1)
-    rownames(X) <- subset_df_current_sample$label_mut_in_marker_fmt[vec_bool_rownames]
-  }else{
-    X <- t(mtx_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages[current_lst_candidate_lineages,subset_df_current_sample$label_mut_in_marker_fmt])
-    X <- ifelse(test=X<0.5,yes=0,no=X)#remove the contribution of a lineage to the mutation frequency if the mutation is not present in most of the lineage sequences
-    X <- X[unname(rowSums(X)>0),] # remove mutations that cannot be explained by the presence of any candidate lineages
-    if (!is.matrix(X)){
-      print(paste0("Cannot detect candidate lineages for Sample \'",current_sample,"\'!"))
-      iii <- iii+1
-      next()
-    }
-  }
-  Y <- unique(subset_df_current_sample[,c("label_mut_in_marker_fmt","VarFreq")])$VarFreq
-  names(Y) <- subset_df_current_sample$label_mut_in_marker_fmt
-  Y <- unname(Y[rownames(X)])
-  
-  #grid search definition for coefficients
-  eval(parse(text=paste0("df_grid_search_combinations <- ",paste0("expand.grid(",paste0(rep("c(0.1,0.5,0.9)", ncol(X)),collapse = ","),")"))))
-  #make sure grid search values respect initial constraints
-  df_grid_search_combinations <- subset(df_grid_search_combinations,(rowSums(df_grid_search_combinations) <= 1))
-  # MCMC grid search
-  current_sample_best_model <- NULL #initialization
-  current_sample_best_model_loglik <- -Inf #initialization
-  for (i in 1:nrow(df_grid_search_combinations)){
-    if (length(current_lst_candidate_lineages)==1){
-      is_the_model_mtx_singular <- T
-      eval(parse(text=paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(X) <= 1,(X) > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-      if (is_the_model_mtx_singular){
-        break()
-      }
-      current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-      if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-        current_sample_best_model <- current_fit
-        current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-      }
-    }else{
-      is_the_model_mtx_singular <- T
-      eval(parse(text= paste0("current_fit <- ConsReg(formula = Y~0+X,family = \'gaussian\',constraints = \'(",paste0("X",colnames(X),collapse = " + "),") <= 1,(",paste0("X",colnames(X),collapse = " + "),") > 0\',optimizer = \'mcmc\',LOWER = 0, UPPER = 1,ini.pars.coef = c(",paste0(unname(unlist(df_grid_search_combinations[i,])),collapse=","),"),penalty = 1E3)")))
-      tryCatch(expr = {summary(current_fit);is_the_model_mtx_singular<-F},error=function(e) print(e))
-      if (is_the_model_mtx_singular){
-        break()
-      }
-      if ((all(summary(current_fit)$coefficients[,"p.value"]<0.05))&(all(!is.na(summary(current_fit)$coefficients[,"p.value"])))){
-        current_sample_signif_model_likelihood <- unname(unlist(summary(current_fit)$metrics["LogLik"]))
-        if (current_sample_signif_model_likelihood > current_sample_best_model_loglik){
-          current_sample_best_model <- current_fit
-          current_sample_best_model_loglik <- current_sample_signif_model_likelihood
-        }
-      }
-    }
-  }
-  
-  if (is_the_model_mtx_singular){
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=ifelse(length(current_lst_candidate_lineages)>0, paste0(current_lst_candidate_lineages,collapse="/"),NA),frequency=NA,p.value=NA,rsq_sample_model=NA,adj_rsq_sample_model=NA,stringsAsFactors = F))
-    next()
-  }
-  if (length(current_sample_best_model)>0){
-    Y_predicted <- predict(current_sample_best_model, newdata = data.frame(X))
-    
-    #find SST and SSE
-    sst <- sum((Y - mean(Y))^2)
-    sse <- sum((Y_predicted - Y)^2)
-    
-    #find R-Squared
-    rsq <- 1 - sse/sst
-    adj_rsq <- 1-(((1-rsq)*(nrow(X)-1))/(nrow(X)-ncol(X)-1))
-    current_df_sample_PANGO_lineages_frequencies <- rbind(current_df_sample_PANGO_lineages_frequencies,data.frame(Sample=current_sample,lineage=current_lst_candidate_lineages,frequency=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"Estimate"])),p.value=unname(unlist(summary(current_sample_best_model)$coefficients[1:(length(current_lst_candidate_lineages)),"p.value"])),rsq_sample_model=rsq,adj_rsq_sample_model=adj_rsq,stringsAsFactors = F))
-  }
-  if (iii%%5==0){
-    print(paste0("Core ",i_cl,": ",iii," samples analyzed out of ",length(the_vec),"!"))
-  }
-  iii <- iii + 1
-}
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence <- current_df_sample_PANGO_lineages_frequencies
-
-#Result of Lineage Frequencies estimation analysis
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$date <- v_samples_date[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample]
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$location <- v_samples_location[df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample]
-df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,!is.na(date))
-#Time series estimated frequencies of lineages of interest
-df_filtered_sample_PANGO_lineages_of_interest_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(lineage%in%v_lineages_of_interest)&(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
-df_filtered_sample_PANGO_lineages_of_interest_frequencies$label_lineage <- v_lineages_of_interest_with_who_desgnation[df_filtered_sample_PANGO_lineages_of_interest_frequencies$lineage]
-#Time series lineages frequencies
-ggplot(data = df_filtered_sample_PANGO_lineages_of_interest_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(label_lineage,levels=v_lineages_of_interest_with_who_desgnation[names(sort(table(subset(df_detected_marker_mutations_in_ww_samples,PANGO_lineage%in%v_lineages_of_interest)$PANGO_lineage),decreasing = F))])),position = "stack") +
-  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages") + scale_fill_manual(values=palette_PANGO_lineages_of_interest_with_who_designation)
-ggsave(filename = "Time_series_PANGO_lineage_of_interest_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 40, height = 20, units = "cm")
-#Time series estimated frequencies of lineages of interest
-df_filtered_sample_PANGO_lineages_frequencies <- subset(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence,(!is.na(p.value))&(p.value<0.05)&(frequency>=0)&(frequency<=1))
-#Time series lineages frequencies
-ggplot(data = df_filtered_sample_PANGO_lineages_frequencies,mapping=aes(x=date,y=frequency)) + geom_col(mapping=aes(fill=factor(lineage,levels=names(sort(table(df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$lineage),decreasing = F)))),position = "stack") +
-  xlab("Sampling date") + ylab(paste0("Frequency (t-test p-value < 0.05)")) + theme_bw() + theme(axis.title = element_text(size=12),axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_text(size=8, angle = 60,hjust=1))+ scale_y_continuous(limit=c(0,1),breaks = seq(0,1,0.1)) + facet_wrap(~location, ncol=1) + labs(fill="PANGO lineages")
-ggsave(filename = "Time_series_all_PANGO_lineages_Frequency_per_location_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 40, height = 20, units = "cm")
-#Barplot Model results
-df_sample_frequencies_results <- aggregate(x = df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$p.value,by=list(Sample=df_sample_PANGO_lineages_frequencies_preselect_based_on_forward_selection_and_X_is_prevalence$Sample),FUN=function(x) ifelse(test=all((x<0.05)&(!is.na(x))),yes="Significant",no=ifelse(test=all((x>=0.05)&(!is.na(x))),yes="Non-significant",no=ifelse(test=all(is.na(x)),yes="Unsolvable",no="Mix"))))
-df_percent_model_results <- data.frame(model_result=c("Significant","Non-significant","Unsolvable"),frequency=c(nrow(subset(df_sample_frequencies_results,x=="Significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Non-significant"))/nrow(df_sample_frequencies_results),nrow(subset(df_sample_frequencies_results,x=="Unsolvable"))/nrow(df_sample_frequencies_results)))
-ggplot(data = df_percent_model_results,mapping=aes(x=factor(model_result,levels=c("Significant","Non-significant","Unsolvable")),y=frequency)) + geom_col(mapping=aes(fill=factor(model_result,levels=c("Significant","Non-significant","Unsolvable"))),position = "stack") +
-  xlab("") + ylab("Frequency") + theme_bw() + theme(axis.title = element_text(size=12), axis.text = element_text(size=12),legend.title = element_text(size=12),legend.text = element_text(size=8),axis.text.x = element_blank(),axis.title.x=element_blank(),axis.ticks.x = element_blank())+ scale_y_continuous(limits=c(0,1),breaks = seq(0,1,0.1)) + labs(fill="Sample lineage frequency\nmodel result") + scale_fill_manual(values=c("Significant"="blue","Non-significant"="black","Unsolvable"="red"))
-ggsave(filename = "WW_samples_lineage_freq_model_result_per_location_preselect_based_on_forward_selection_and_X_is_prevalence.png", path=output_workspace, width = 15, height = 15, units = "cm")
-
 
 #Table data stratification for Alexandra's paper
 df_sample_detection_metrics <- df_sample_stratifications_of_interest
