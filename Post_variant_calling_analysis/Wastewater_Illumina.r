@@ -44,8 +44,8 @@ nb_cores <- 10 #TO UPDATE
 palette_mutations_of_interest <- RColorBrewer::brewer.pal(length(c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")),"Set1")
 names(palette_mutations_of_interest) <- c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")
 
-v_lineages_of_interest <- c("B.1.1.7","B.1.351","P.1","B.1.427_and_B.1.429","B.1.160","B.1.177","B.1.617.X","B.1.525","B.1.526","C.37","P.3","P.2","A.2.5","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
-v_lineages_of_interest_with_who_desgnation <- c("Alpha (B.1.1.7)","Beta (B.1.351)","Gamma (P.1)","Epsilon (B.1.427_and_B.1.429)","B.1.160","B.1.177","Kappa+Delta (B.1.617.X)","Eta (B.1.525)","Iota (B.1.526)","Lambda (C.37)","Theta (P.3)","Zeta (P.2)","A.2.5","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
+v_lineages_of_interest <- c("B.1.1.7","B.1.351","P.1","B.1.427_and_B.1.429","B.1.160","B.1.177","B.1.617.X","B.1.525","B.1.526","C.37","P.3","P.2","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
+v_lineages_of_interest_with_who_desgnation <- c("Alpha (B.1.1.7)","Beta (B.1.351)","Gamma (P.1)","Epsilon (B.1.427_and_B.1.429)","B.1.160","B.1.177","Kappa+Delta (B.1.617.X)","Eta (B.1.525)","Iota (B.1.526)","Lambda (C.37)","Theta (P.3)","Zeta (P.2)","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
 names(v_lineages_of_interest_with_who_desgnation) <- v_lineages_of_interest
 
 qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
@@ -588,7 +588,7 @@ site_samples_for_sites <- site_samples[!is.na(site_samples)]
 # dev.off()
 
 # #QIAseq replicates 
-# lst_QIAseq_samples <-  read.csv2(file = paste0( "D:/Mirror/Covid19/Wastewater/QIAseq/Nanopore/","lst_samples.txt"),sep = ",",header = F,stringsAsFactors = FALSE)[,1]
+# lst_QIAseq_samples <-  read.csv2(file = paste0(output_workspace,"lst_samples.txt"),sep = ",",header = F,stringsAsFactors = FALSE)[,1]
 # is_QIAseq_sample_replicate <- function(the_sample){
 #   out <- F
 #   for (current_QIAseq_sample in lst_QIAseq_samples){
@@ -861,6 +861,7 @@ convert_genomic_mut_to_ORF_prot_mut <- function(the_genomic_mut){
 
 #mutation prevalence data
 df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages <- readRDS(file = paste0(output_workspace,"Table_df_all_mutations_prevalence_in_lineages.rds"))
+df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage[df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage=="A.2.5"] <- "A.2.5.X"
 #if the prevalence dataframe is incomplete, add the appropriate information
 if ((!"label_mut_ORF_effect"%in%colnames(df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages))|(!"B.1.617.X"%in%df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage)){
   df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages <- subset(df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages, (!lineage%in%v_lineages_of_interest)&(prevalence>=0.9))
@@ -1292,6 +1293,9 @@ df_metadata_LSPQ_samples$RSS <- toupper(df_metadata_LSPQ_samples$RSS)
 for (i in 1:nrow(df_metadata_LSPQ_samples)){
   if (grepl(pattern = "B.1.617",x = df_metadata_LSPQ_samples$PANGOLIN[i],fixed = T)){
     df_metadata_LSPQ_samples$PANGOLIN[i] <- "B.1.617.X"
+  }
+  if (grepl(pattern = "A.2.5",x = df_metadata_LSPQ_samples$PANGOLIN[i],fixed = T)){
+    df_metadata_LSPQ_samples$PANGOLIN[i] <- "A.2.5.X"
   }
 }
 #Determining the thresholds confidence score and time gaps
