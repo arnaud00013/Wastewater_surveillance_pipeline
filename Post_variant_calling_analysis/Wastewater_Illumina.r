@@ -1348,7 +1348,7 @@ df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues <
 df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues$p.value <- NA
 for (indx_row in 1:nrow(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues)){
   v_the_concordance_score_at_selected_thresholds <- subset(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts,(min_nb_signature_muts_detected==current_min_nb_signature_muts_detected)&(max_time_gap_tolerated==current_max_time_gap))$concordance_score
-  nb_perms <- 999
+  nb_perms <- 9999
   lst_splits <- split(1:nb_perms, ceiling(seq_along(1:nb_perms)/(nb_perms/nb_cores)))
   the_f_parallel <- function(i_cl){
     the_vec<- lst_splits[[i_cl]]
@@ -1964,6 +1964,7 @@ for (i in 1:nrow(df_sample_detection_metrics)){
   df_sample_detection_metrics$nb_mutations[i] <- v_nb_SNVs_per_sample[df_sample_detection_metrics$Sample[i]]
   df_sample_detection_metrics$nb_detected_lineages[i] <- length(unique(subset(df_detected_marker_mutations_in_ww_samples,Sample==df_sample_detection_metrics$Sample[i])$PANGO_lineage))
 }
+df_sample_detection_metrics$month_year <- format(as.Date(df_sample_detection_metrics$date,"%Y-%m-%d"),"%Y-%m")
 #save tables
 write.table(x=df_sample_detection_metrics,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
 write.table(x=df_variants,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
