@@ -1967,9 +1967,10 @@ for (i in 1:nrow(df_sample_detection_metrics)){
 df_sample_detection_metrics$month_year <- format(as.Date(df_sample_detection_metrics$date,"%Y-%m-%d"),"%Y-%m")
 #save tables
 write.table(x=df_sample_detection_metrics,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
-write.table(x=df_variants,file = paste0(output_workspace,"Table_sample_metrics.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
+write.table(x=df_variants,file = paste0(output_workspace,"Table_SNVs_in_each_sample.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
+df_detected_marker_mutations_in_ww_samples <- subset(df_detected_marker_mutations_in_ww_samples,!is.na(month_year))
 write.table(x=subset(df_detected_marker_mutations_in_ww_samples,nb_signature_mutations>=3),file = paste0(output_workspace,"Table_detected_marker_mutations_in_ww_samples.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
-
+write.table(x=unique(subset(df_detected_marker_mutations_in_ww_samples,(nb_signature_mutations>=3)&(!is.na(month_year)))[,c("date","month_year","location","PANGO_lineage","label_mut_in_marker_fmt","str_signature_mutations","nb_signature_mutations")]),file = paste0(output_workspace,"Table_S1_detected_lineages_in_WW_samples.csv"),sep = ",",na = "NA",row.names = FALSE,col.names = TRUE)
 
 library("session")
 save.session(file = paste0(output_workspace,"ALL_ILLUMINA_",gsub(pattern = ":",replacement = "_",x = gsub(pattern = " ",replacement = "_",x = date())),"_RSession.Rda"))
