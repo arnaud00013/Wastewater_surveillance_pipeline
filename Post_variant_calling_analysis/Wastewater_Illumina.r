@@ -95,7 +95,7 @@ df_variants <- subset(df_variants,nchar(VarAllele)==1)
 df_variants <- subset(df_variants,subset = !duplicated(paste0(Position,VarAllele,Sample,sep="")))
 #make sure that the variant frequency filter is applied (freq variant >=0.05 on at least one strand)
 df_variants$VarFreq <- (as.numeric(gsub(pattern = "%",replacement = "",x = df_variants$VarFreq,fixed = TRUE))/100)
-df_variants <- subset(df_variants, (Reads1+Reads2>=50)&(VarFreq>=0.10))
+df_variants <- subset(df_variants, (Reads1+Reads2>=50)&(VarFreq>=0.25))
 #apply strand bias filter on variants (freq variant >=0.02 on each strand)
 df_variants <- df_variants[(((df_variants$Reads2Plus/(df_variants$Reads1Plus+df_variants$Reads2Plus))>=0.02)&((df_variants$Reads2Minus/(df_variants$Reads1Minus+df_variants$Reads2Minus))>=0.02)),]
 
