@@ -1353,8 +1353,7 @@ df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues <
 df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues$p.value <- NA
 for (indx_row in 1:nrow(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues)){
   v_the_concordance_score_at_selected_thresholds <- subset(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts,(min_nb_signature_muts_detected==current_min_nb_signature_muts_detected)&(max_time_gap_tolerated==current_max_time_gap))$concordance_score
-  nb_perms <- 500
-  nb_cores <- 5
+  nb_perms <- 999
   lst_splits <- split(1:nb_perms, ceiling(seq_along(1:nb_perms)/(nb_perms/nb_cores)))
   the_f_parallel <- function(i_cl){
     the_vec<- lst_splits[[i_cl]]
