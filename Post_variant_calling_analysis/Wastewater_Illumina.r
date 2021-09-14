@@ -1281,8 +1281,11 @@ df_nb_samples_per_location_across_time <- subset(df_nb_samples_per_location_acro
 ggplot(data = df_nb_samples_per_location_across_time,mapping=aes(x=factor(time,levels=v_lst_year_month),y=Nb_samples)) + geom_col(mapping=aes(fill=factor(location,levels=v_lst_unique_locations))) + xlab("Time") + ylab(paste0("Number of Wastewater samples with SNV(s)")) + theme_bw() + theme(axis.title = element_text(size=14),axis.text = element_text(size=14),legend.title = element_text(size=12),legend.text = element_text(size=12),axis.text.x = element_text(size=12, angle = 60,hjust=1),axis.text.y = element_text(size=12)) + labs(fill="Location") + scale_y_continuous(limits=c(0,max(df_nb_samples_per_location_across_time$Nb_samples*1.5,na.rm=T)),breaks=seq(0,max(df_nb_samples_per_location_across_time$Nb_samples*1.5,na.rm=T)+20,20)) + scale_fill_manual(values=c("QUEBEC"="blue3","MONTREAL"="green3","OTTAWA"="red","ON"="grey","LAVAL"="violet"))
 ggsave(filename = "Nb_samples_per_location_across_time.png", path=output_workspace, width = 20, height = 15, units = "cm",dpi=1200)
 
+
 #Concordance between WW and clinical sampling
 #Add sampling site information
+min_date <- min(df_detected_marker_mutations_in_ww_samples$date,na.rm=T)
+max_date <- max(df_detected_marker_mutations_in_ww_samples$date,na.rm=T)
 df_metadata_LSPQ_samples <- read.csv2(file = paste0(output_workspace,"LATEST_REPORT.csv"),sep = ",",header = TRUE,stringsAsFactors = FALSE)
 df_metadata_LSPQ_samples <- subset(df_metadata_LSPQ_samples,(run.type%in%c("production"))&(sample.type=="clinical"))
 df_HospCenter <- read.csv2(file = paste0(output_workspace,"ListeCH_prefix.csv"),sep = ",",header = TRUE,stringsAsFactors = FALSE)
@@ -1290,6 +1293,8 @@ v_site_to_RSS <- df_HospCenter$RSS
 names(v_site_to_RSS) <- df_HospCenter$Prefix
 df_metadata_LSPQ_samples$RSS <- ifelse(test=is.na(df_metadata_LSPQ_samples$site),yes=NA,no=v_site_to_RSS[df_metadata_LSPQ_samples$site])
 df_metadata_LSPQ_samples$RSS <- toupper(df_metadata_LSPQ_samples$RSS)
+df_metadata_LSPQ_samples <- subset(df_metadata_LSPQ_samples,RSS%in%unique(df_detected_marker_mutations_in_ww_samples$location))
+df_metadata_LSPQ_samples <- subset(df_metadata_LSPQ_samples,(!is.na(DATE_PRELEV))&(DATE_PRELEV>=min_date)&(DATE_PRELEV<=max_date))
 for (i in 1:nrow(df_metadata_LSPQ_samples)){
   if (grepl(pattern = "B.1.617",x = df_metadata_LSPQ_samples$PANGOLIN[i],fixed = T)){
     df_metadata_LSPQ_samples$PANGOLIN[i] <- "B.1.617.X"
@@ -1348,7 +1353,8 @@ df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues <
 df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues$p.value <- NA
 for (indx_row in 1:nrow(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts_and_pvalues)){
   v_the_concordance_score_at_selected_thresholds <- subset(df_concordance_score_PANGO_lineages_inference_with_abs_nb_sig_muts,(min_nb_signature_muts_detected==current_min_nb_signature_muts_detected)&(max_time_gap_tolerated==current_max_time_gap))$concordance_score
-  nb_perms <- 9999
+  nb_perms <- 500
+  nb_cores <- 5
   lst_splits <- split(1:nb_perms, ceiling(seq_along(1:nb_perms)/(nb_perms/nb_cores)))
   the_f_parallel <- function(i_cl){
     the_vec<- lst_splits[[i_cl]]
