@@ -15,7 +15,7 @@ R (version 3.5.2+) packages: "ggplot2", "seqinr", "grid", "RColorBrewer", "cowpl
 The pipeline is separated in two main modules that sould be run in the following order:
 1. Variant calling module
 
-For unning this module of the pipeline, you need to submit a job to your cluster slurm queue using the following command: 'sbatch submit_samples_to_iPMVC.sh'.
+For running this module of the pipeline, you need to submit a job to your cluster slurm queue using the following command: 'sbatch submit_samples_to_iPMVC.sh'.
  
 a) Inputs (files you need to copy into the Variant_calling workspace): 
 
