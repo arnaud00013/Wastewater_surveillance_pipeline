@@ -862,12 +862,13 @@ convert_genomic_mut_to_ORF_prot_mut <- function(the_genomic_mut){
 #mutation prevalence data
 df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages <- readRDS(file = paste0(output_workspace,"Table_df_all_mutations_prevalence_in_lineages.rds"))
 df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage[df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage=="A.2.5"] <- "A.2.5.X"
+#Import prevalence data TO ADD
 df_sig_muts_prevalence_data_to_add <- read.csv2(file = paste0(output_workspace,"df_signature_muts_prevalence_VOCs_VUIs.csv"),sep = ",",header = T,stringsAsFactors = FALSE)
 df_sig_muts_prevalence_data_to_add$prevalence <- as.numeric(df_sig_muts_prevalence_data_to_add$prevalence)/100
 df_sig_muts_prevalence_data_to_add$genomic_position <- unname(vapply(X = df_sig_muts_prevalence_data_to_add$mutation_name,FUN = function(x) as.integer(substr(x,1,nchar(x)-1)),FUN.VALUE = c(0)))
 df_sig_muts_prevalence_data_to_add$mutation_name <- paste0(unname(vapply(X = df_sig_muts_prevalence_data_to_add$genomic_position, FUN = function(x) substr(genome_refseq,x,x),FUN.VALUE = c(""))),df_sig_muts_prevalence_data_to_add$mutation_name)
 v_lineage_set_diff <- setdiff(df_sig_muts_prevalence_data_to_add$lineage,df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage)
-#if the prevalence dataframe is incomplete, add the appropriate information
+#if there are new data to add or if prevalence dataframe is incomplete, add the appropriate information
 if ((length(v_lineage_set_diff) > 0)|(!"label_mut_ORF_effect"%in%colnames(df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages))|(!"B.1.617.X"%in%df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages$lineage)){
   df_sig_muts_prevalence_data_to_add <- subset(df_sig_muts_prevalence_data_to_add,lineage%in%v_lineage_set_diff)
   df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages <- subset(df_prevalence_mut_of_interest_in_NCBI_WORLDWIDE_lineages, (!lineage%in%v_lineages_of_interest)&(prevalence>=0.9))
