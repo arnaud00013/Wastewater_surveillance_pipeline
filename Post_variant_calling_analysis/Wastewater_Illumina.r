@@ -44,8 +44,8 @@ nb_cores <- 10 #TO UPDATE
 palette_mutations_of_interest <- RColorBrewer::brewer.pal(length(c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")),"Set1")
 names(palette_mutations_of_interest) <- c("A23063T;N501Y;S;S","T22917G;L452R;S;S","G23012A;E484K;S;S","A23403G;D614G;S;S","C23604A;P681H;S;S","G22992A;S477N;S;S","A22812C;K417T;S;S")
 
-v_lineages_of_interest <- c("B.1.1.7","B.1.351","P.1","B.1.427_and_B.1.429","B.1.160","B.1.177","B.1.617.X","B.1.525","B.1.526","C.37","P.3","P.2","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
-v_lineages_of_interest_with_who_desgnation <- c("Alpha (B.1.1.7)","Beta (B.1.351)","Gamma (P.1)","Epsilon (B.1.427_and_B.1.429)","B.1.160","B.1.177","Kappa+Delta (B.1.617.X)","Eta (B.1.525)","Iota (B.1.526)","Lambda (C.37)","Theta (P.3)","Zeta (P.2)","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2")
+v_lineages_of_interest <- c("B.1.1.7","B.1.351","P.1","B.1.427_and_B.1.429","B.1.160","B.1.177","B.1.617.X","B.1.525","B.1.526","C.37","P.3","P.2","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2","AZ.5","C.1.2","B.1.630","B.1.640","B.1.1.529")
+v_lineages_of_interest_with_who_desgnation <- c("Alpha (B.1.1.7)","Beta (B.1.351)","Gamma (P.1)","Epsilon (B.1.427_and_B.1.429)","B.1.160","B.1.177","Kappa+Delta (B.1.617.X)","Eta (B.1.525)","Iota (B.1.526)","Lambda (C.37)","Theta (P.3)","Zeta (P.2)","A.2.5.X","B.1.1.318","B.1.1.519","B.1.466.2","B.1.621","B.1.214.2","AV.1","AT.1","C.36.3","R.1","R.2","AZ.5","C.1.2","B.1.630","B.1.640","Omicron (B.1.1.529)")
 names(v_lineages_of_interest_with_who_desgnation) <- v_lineages_of_interest
 
 qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
